@@ -25,6 +25,8 @@ rules:
       - config
       - output
       - clipboard
+      - mcp
+      - share
       - docs
       - ci
       - build

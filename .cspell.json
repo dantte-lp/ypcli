@@ -88,7 +88,12 @@
     "openssl",
     "DynamicUser",
     "modelcontextprotocol",
-    "reverse"
+    "reverse",
+    "GOPATH",
+    "syscalls",
+    "exfiltrating",
+    "exfiltration",
+    "loopback"
   ],
   "ignorePaths": [
     "go.mod",

@@ -11,6 +11,11 @@ English version: [CHANGELOG.md](CHANGELOG.md).
 
 ### Добавлено
 
+- Чтение payload секрета напрямую из движка HashiCorp Vault или OpenBao KV v2:
+  `ypcli send --vault-path <path> --vault-field <field>` (с
+  `--vault-addr/-token/-mount/-namespace`, учитывая env `VAULT_*` / `BAO_*`).
+- Режим редактора: `ypcli send` без ввода открывает `$EDITOR` (или `--editor`)
+  для составления секрета и отправляет его по сохранению.
 - Глобальные дефолты: блок `defaults` верхнего уровня в файле конфигурации
   (управляется через `ypcli config defaults`), применяемый под каждым профилем,
   чтобы указать self-hosted сервер без создания профиля. Приоритет теперь:

@@ -291,6 +291,53 @@ func TestVersionJSON(t *testing.T) {
 	}
 }
 
+func TestSendFromVault(t *testing.T) {
+	// Fake Vault/OpenBao KV v2 endpoint.
+	vaultSrv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Header.Get("X-Vault-Token") != "vt" {
+			w.WriteHeader(http.StatusForbidden)
+			return
+		}
+		if r.URL.Path != "/v1/secret/data/db" {
+			w.WriteHeader(http.StatusNotFound)
+			return
+		}
+		json.NewEncoder(w).Encode(map[string]any{
+			"data": map[string]any{"data": map[string]any{"password": "hunter2"}},
+		})
+	}))
+	defer vaultSrv.Close()
+
+	fs := newFakeServer()
+	yp := httptest.NewServer(fs.handler())
+	defer yp.Close()
+
+	out, _, code := run(t, "send", "--api", yp.URL, "--url", yp.URL, "--json",
+		"--vault-addr", vaultSrv.URL, "--vault-token", "vt",
+		"--vault-path", "db", "--vault-field", "password")
+	if code != 0 {
+		t.Fatalf("send from vault exit = %d", code)
+	}
+	var res struct{ URL string }
+	if err := json.Unmarshal([]byte(out), &res); err != nil {
+		t.Fatalf("not json: %v (%q)", err, out)
+	}
+	got, _, rcode := run(t, "receive", res.URL, "--api", yp.URL)
+	if rcode != 0 {
+		t.Fatalf("receive exit = %d", rcode)
+	}
+	if got != "hunter2" {
+		t.Errorf("decrypted vault secret = %q, want hunter2", got)
+	}
+}
+
+func TestSendFromVaultMissingFieldFlag(t *testing.T) {
+	_, _, code := run(t, "send", "--vault-path", "db", "--vault-addr", "http://x", "--vault-token", "t")
+	if code != 2 {
+		t.Errorf("exit = %d, want 2 (usage: --vault-field required)", code)
+	}
+}
+
 // runStdin is like run but feeds stdinData to the command as piped stdin.
 func runStdin(t *testing.T, stdinData string, argsThenSubcmdLast ...string) (string, string, int) {
 	t.Helper()

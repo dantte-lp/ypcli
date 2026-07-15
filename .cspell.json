@@ -59,7 +59,15 @@
     "toml",
     "venv",
     "uv",
-    "ty"
+    "ty",
+    "OpenBao",
+    "openbao",
+    "bao",
+    "VAULT",
+    "BAO",
+    "ADDR",
+    "notepad",
+    "KV"
   ],
   "ignorePaths": [
     "go.mod",

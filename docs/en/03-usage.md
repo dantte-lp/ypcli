@@ -35,6 +35,32 @@ printf 'wifi-password' | ypcli send --qr --copy
 ypcli send --file secret.pem --key "$(openssl rand -hex 16)"
 ```
 
+### Compose in an editor
+
+Run `send` interactively (no `--file`/`--text`/stdin) and ypcli opens your
+editor; the secret is sent when you save and quit. The editor is
+`$YPCLI_EDITOR`, `$VISUAL`, or `$EDITOR` (falling back to `vi`, or `notepad` on
+Windows). `--editor` forces it even with piped input.
+
+```bash
+ypcli send                 # opens the editor
+ypcli send --editor --expiration 1d
+```
+
+### From a secrets manager (Vault / OpenBao)
+
+Read the payload straight from a Vault or OpenBao KV v2 engine — nothing touches
+your shell history or the filesystem. Standard `VAULT_*` / `BAO_*` environment
+variables are honored.
+
+```bash
+export VAULT_ADDR=https://vault.corp VAULT_TOKEN=…
+ypcli send --vault-path db --vault-field password
+```
+
+For the bearer token that authenticates to a private *yopass* server, use
+`token_command` instead — see [Configuration](05-configuration.md#tokens).
+
 ## Receiving secrets
 
 From a share URL:

@@ -2,9 +2,13 @@
 
 from __future__ import annotations
 
+import os
+import stat
+from pathlib import Path
+
 import pytest
 
-from _harness import Run
+from _harness import FakeServer, Run
 
 pytestmark = pytest.mark.container
 
@@ -64,3 +68,59 @@ def test_send_invalid_expiration_is_usage_error(yp_run: Run) -> None:
     res = yp_run("send", "--expiration", "2w", stdin="x")
     assert res.code == 2
     assert "expiration" in res.stderr.lower()
+
+
+@pytest.mark.skipif(os.name == "nt", reason="uses a POSIX fake-editor script")
+def test_send_editor_mode(yp_run: Run, tmp_path: Path) -> None:
+    # A non-interactive "editor" that writes a fixed payload into the temp file.
+    editor = tmp_path / "fakeeditor.sh"
+    editor.write_text('#!/bin/sh\nprintf "composed in editor" > "$1"\n')
+    editor.chmod(editor.stat().st_mode | stat.S_IEXEC)
+
+    res = yp_run("send", "--editor", "--json", env_extra={"YPCLI_EDITOR": str(editor)})
+    assert res.code == 0
+    url = res.json()["url"]
+    assert yp_run("receive", url).stdout == "composed in editor"
+
+
+def test_send_from_vault(run: Run, yopass, fake: FakeServer) -> None:
+    # Real yopass for the share, fake server acting as the Vault/OpenBao KV engine.
+    fake.state.vault = {"password": "hunter2"}
+    res = run(
+        "send",
+        "--api",
+        yopass.api,
+        "--url",
+        yopass.url,
+        "--json",
+        "--vault-addr",
+        fake.api,
+        "--vault-token",
+        fake.state.valid_token,
+        "--vault-path",
+        "db",
+        "--vault-field",
+        "password",
+    )
+    assert res.code == 0
+    url = res.json()["url"]
+    assert run("receive", url, "--api", yopass.api).stdout == "hunter2"
+
+
+def test_send_from_vault_wrong_token_is_auth_error(run: Run, yopass, fake: FakeServer) -> None:
+    res = run(
+        "send",
+        "--api",
+        yopass.api,
+        "--url",
+        yopass.url,
+        "--vault-addr",
+        fake.api,
+        "--vault-token",
+        "wrong",
+        "--vault-path",
+        "db",
+        "--vault-field",
+        "password",
+    )
+    assert res.code == 5  # Vault 403 -> ErrUnauthorized

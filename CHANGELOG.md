@@ -11,6 +11,11 @@ Russian translation: [CHANGELOG.ru.md](CHANGELOG.ru.md).
 
 ### Added
 
+- Read the secret payload directly from a HashiCorp Vault or OpenBao KV v2
+  engine: `ypcli send --vault-path <path> --vault-field <field>` (with
+  `--vault-addr/-token/-mount/-namespace`, honoring `VAULT_*` / `BAO_*` env).
+- Editor mode: `ypcli send` with no input opens `$EDITOR` (or `--editor`) to
+  compose the secret, sending it on save.
 - Global defaults: a top-level `defaults` block in the config file (managed with
   `ypcli config defaults`) that applies beneath every profile, so a self-hosted
   server can be targeted without creating a profile. Precedence is now

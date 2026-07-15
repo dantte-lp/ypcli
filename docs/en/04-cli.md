@@ -18,18 +18,28 @@ Available on every command. Resolution precedence is
 
 ## `ypcli send`
 
-Encrypt and publish a secret. Input comes from `--file`, `--text`, or piped stdin.
+Encrypt and publish a secret. Input comes from `--vault-path`, `--file`,
+`--text`, piped stdin, or an editor (when run interactively).
 
 | Flag | Description |
 |---|---|
 | `--file, -f` | read the secret from a file (published as a file secret) |
 | `--text, -t` | secret text (instead of stdin/file) |
+| `--editor` | compose the secret in `$EDITOR` (default when interactive) |
 | `--expiration, -e` | lifetime: `1h`, `1d`, or `1w` (default `1h`) |
 | `--one-time` | delete after first view (default `true`) |
 | `--require-auth` | require authentication to view (server support required) |
 | `--key, -k` | manual encryption key; omitted from the URL |
 | `--qr` | also render the URL as a terminal QR code (text mode) |
 | `--copy` | copy the URL to the system clipboard |
+| `--vault-path` | read the payload from a Vault/OpenBao KV v2 path |
+| `--vault-field` | field to read from the Vault/OpenBao secret |
+| `--vault-mount` | KV v2 mount (default `secret`) |
+| `--vault-addr` | Vault/OpenBao address (default `$VAULT_ADDR` / `$BAO_ADDR`) |
+| `--vault-token` | Vault/OpenBao token (default `$VAULT_TOKEN` / `$BAO_TOKEN`) |
+| `--vault-namespace` | namespace (default `$VAULT_NAMESPACE` / `$BAO_NAMESPACE`) |
+
+Input priority: `--vault-path` > `--file` > `--text` > piped stdin > editor.
 
 JSON output:
 

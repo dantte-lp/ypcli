@@ -210,6 +210,8 @@ class _FakeState:
         self.force_status: int | None = None
         self.last_auth: str | None = None
         self.counter = 0
+        # Vault/OpenBao KV v2 payload served at /v1/<mount>/data/<path>.
+        self.vault: dict[str, object] = {"password": "hunter2"}
 
     def next_id(self) -> str:
         self.counter += 1
@@ -239,7 +241,12 @@ class _Handler(BaseHTTPRequestHandler):
 
     def do_GET(self) -> None:
         st = self.state
-        if self.path == "/config":
+        if self.path.startswith("/v1/"):  # Vault/OpenBao KV v2 read
+            if self.headers.get("X-Vault-Token") != st.valid_token:
+                self._json(403, {"errors": ["permission denied"]})
+            else:
+                self._json(200, {"data": {"data": st.vault}})
+        elif self.path == "/config":
             self._json(200, {"ARGON2": st.argon2})
         elif self.path == "/version":
             if st.version is None:

@@ -2,16 +2,19 @@ package cli
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/dantte-lp/ypcli/internal/api"
 	"github.com/dantte-lp/ypcli/internal/clipboard"
 	"github.com/dantte-lp/ypcli/internal/config"
 	"github.com/dantte-lp/ypcli/internal/crypto"
 	"github.com/dantte-lp/ypcli/internal/output"
+	"github.com/dantte-lp/ypcli/internal/vault"
 	"github.com/spf13/cobra"
 )
 
@@ -23,19 +26,28 @@ func (a *app) newSendCmd() *cobra.Command {
 			"printing a one-time share URL. Input is taken from --file, --text, or stdin.",
 		Example: "  printf 'secret' | ypcli send --one-time\n" +
 			"  ypcli send --file db.env --expiration 1d --json\n" +
-			"  echo hi | ypcli send --profile work --require-auth",
+			"  ypcli send            # opens $EDITOR when run interactively\n" +
+			"  ypcli send --vault-path secret/db --vault-field password",
 		Args: cobra.NoArgs,
 		RunE: a.runSend,
 	}
 	f := cmd.Flags()
 	f.StringP("file", "f", "", "read secret from a file")
 	f.StringP("text", "t", "", "secret text (instead of stdin/file)")
+	f.Bool("editor", false, "compose the secret in $EDITOR (default when interactive)")
 	f.StringP("expiration", "e", "", "lifetime: 1h, 1d or 1w")
 	f.Bool("one-time", true, "delete after first view")
 	f.Bool("require-auth", false, "require authentication to view (server support needed)")
 	f.StringP("key", "k", "", "manual encryption key (omitted from the URL)")
 	f.Bool("qr", false, "also render the URL as a terminal QR code")
 	f.Bool("copy", false, "copy the URL to the system clipboard")
+	// Read the secret payload from a Vault / OpenBao KV v2 engine.
+	f.String("vault-path", "", "read the secret from a Vault/OpenBao KV v2 path")
+	f.String("vault-field", "", "field to read from the Vault/OpenBao secret")
+	f.String("vault-mount", "secret", "Vault/OpenBao KV v2 mount")
+	f.String("vault-addr", "", "Vault/OpenBao address (default $VAULT_ADDR/$BAO_ADDR)")
+	f.String("vault-token", "", "Vault/OpenBao token (default $VAULT_TOKEN/$BAO_TOKEN)")
+	f.String("vault-namespace", "", "Vault/OpenBao namespace (default $VAULT_NAMESPACE/$BAO_NAMESPACE)")
 	return cmd
 }
 
@@ -69,16 +81,28 @@ func (a *app) runSend(cmd *cobra.Command, _ []string) error {
 	s.log.Debug("sending secret", "api", s.api, "argon2", useArgon2,
 		"one_time", oneTime, "expiration", expirationLabel(exp), "authenticated", token != "")
 
+	vaultPath, _ := cmd.Flags().GetString("vault-path")
 	filePath, _ := cmd.Flags().GetString("file")
 	var (
 		id      string
 		fileOpt bool
 	)
-	if filePath != "" {
+	switch {
+	case vaultPath != "":
+		var secret string
+		secret, err = readFromVault(ctx, cmd, vaultPath)
+		if err == nil {
+			id, err = sendMessage(ctx, client, stringReader(secret), key, exp, oneTime, requireAuth, useArgon2)
+		}
+	case filePath != "":
 		id, err = sendFile(ctx, client, filePath, key, exp, oneTime, useArgon2)
 		fileOpt = true
-	} else {
-		id, err = sendText(ctx, cmd, client, key, exp, oneTime, requireAuth, useArgon2)
+	default:
+		var r io.Reader
+		r, err = textReader(ctx, cmd)
+		if err == nil {
+			id, err = sendMessage(ctx, client, r, key, exp, oneTime, requireAuth, useArgon2)
+		}
 	}
 	if err != nil {
 		return err
@@ -91,11 +115,8 @@ func (a *app) runSend(cmd *cobra.Command, _ []string) error {
 	})
 }
 
-func sendText(ctx context.Context, cmd *cobra.Command, client *api.Client, key string, exp int32, oneTime, requireAuth, argon2 bool) (string, error) {
-	r, err := textReader(cmd)
-	if err != nil {
-		return "", err
-	}
+// sendMessage encrypts the plaintext from r and stores it as a text secret.
+func sendMessage(ctx context.Context, client *api.Client, r io.Reader, key string, exp int32, oneTime, requireAuth, argon2 bool) (string, error) {
 	enc := crypto.Encrypt
 	if argon2 {
 		enc = crypto.EncryptWithArgon2
@@ -107,6 +128,25 @@ func sendText(ctx context.Context, cmd *cobra.Command, client *api.Client, key s
 	return client.CreateSecret(ctx, api.Secret{
 		Message: msg, Expiration: exp, OneTime: oneTime, RequireAuth: requireAuth,
 	})
+}
+
+// readFromVault fetches the secret payload from a Vault/OpenBao KV v2 engine.
+func readFromVault(ctx context.Context, cmd *cobra.Command, path string) (string, error) {
+	field, _ := cmd.Flags().GetString("vault-field")
+	if field == "" {
+		return "", usage("--vault-field is required with --vault-path")
+	}
+	mount, _ := cmd.Flags().GetString("vault-mount")
+	c := vault.Client{
+		Addr:      coalesce(changedString(cmd, "vault-addr"), os.Getenv("VAULT_ADDR"), os.Getenv("BAO_ADDR")),
+		Token:     coalesce(changedString(cmd, "vault-token"), os.Getenv("VAULT_TOKEN"), os.Getenv("BAO_TOKEN")),
+		Namespace: coalesce(changedString(cmd, "vault-namespace"), os.Getenv("VAULT_NAMESPACE"), os.Getenv("BAO_NAMESPACE")),
+	}
+	val, err := c.ReadField(ctx, mount, path, field)
+	if errors.Is(err, vault.ErrNotConfigured) {
+		return "", usage("vault: set --vault-addr/--vault-token or VAULT_ADDR/VAULT_TOKEN")
+	}
+	return val, err
 }
 
 func sendFile(ctx context.Context, client *api.Client, path, key string, exp int32, oneTime, argon2 bool) (string, error) {
@@ -127,20 +167,31 @@ func sendFile(ctx context.Context, client *api.Client, path, key string, exp int
 	return client.CreateFile(ctx, readerOf(data), exp, oneTime)
 }
 
-// textReader returns the plaintext source: --text, else stdin (must be piped).
-func textReader(cmd *cobra.Command) (io.Reader, error) {
+// textReader returns the plaintext source. Priority: --text, then piped stdin;
+// when stdin is a terminal (or --editor is set) it opens the user's editor.
+func textReader(ctx context.Context, cmd *cobra.Command) (io.Reader, error) {
 	if text, _ := cmd.Flags().GetString("text"); text != "" {
 		return stringReader(text), nil
 	}
+
+	forced, _ := cmd.Flags().GetBool("editor")
+	interactive := false
 	in := cmd.InOrStdin()
 	if f, ok := in.(*os.File); ok {
-		info, err := f.Stat()
+		if info, err := f.Stat(); err == nil {
+			interactive = info.Mode()&os.ModeCharDevice != 0
+		}
+	}
+
+	if forced || interactive {
+		content, err := openEditor(ctx)
 		if err != nil {
-			return nil, fmt.Errorf("stat stdin: %w", err)
+			return nil, err
 		}
-		if info.Mode()&os.ModeCharDevice != 0 {
-			return nil, usage("no input: provide --file, --text or piped stdin")
+		if strings.TrimSpace(content) == "" {
+			return nil, usage("empty secret; nothing to send")
 		}
+		return stringReader(content), nil
 	}
 	return in, nil
 }

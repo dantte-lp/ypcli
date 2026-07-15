@@ -27,8 +27,7 @@ ypcli is an independent open source project maintained in this repository.
 
 | Decision type | Location |
 |---|---|
-| Design specification | `docs/superpowers/specs/2026-07-15-ypcli-design.md` |
-| Implementation plan | `docs/superpowers/plans/2026-07-15-ypcli-implementation.md` |
+| Architecture | `docs/en/01-architecture.md` |
 | Security posture | `SECURITY.md`, `docs/en/07-security.md` |
 | Release process | `docs/en/08-development.md` |
 

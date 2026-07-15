@@ -12,8 +12,3 @@
 | 06 | [Automation](en/06-automation.md) | CI/agents, JSON output, exit codes |
 | 07 | [Security](en/07-security.md) | Cryptographic model, interoperability |
 | 08 | [Development](en/08-development.md) | Build, test, lint, release workflow |
-
-## Design records
-
-- [Design specification](superpowers/specs/2026-07-15-ypcli-design.md)
-- [Implementation plan](superpowers/plans/2026-07-15-ypcli-implementation.md)

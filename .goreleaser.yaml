@@ -65,6 +65,9 @@ homebrew_casks:
       owner: dantte-lp
       name: homebrew-tap
       token: "{{ .Env.TAP_GITHUB_TOKEN }}"
+    commit_author:
+      name: dantte-lp
+      email: 46395539+dantte-lp@users.noreply.github.com
     homepage: "https://github.com/dantte-lp/ypcli"
     description: "CI/agents/team-first yopass CLI for sharing encrypted one-time secrets"
     license: "MIT"
@@ -81,6 +84,9 @@ scoops:
       owner: dantte-lp
       name: scoop-bucket
       token: "{{ .Env.TAP_GITHUB_TOKEN }}"
+    commit_author:
+      name: dantte-lp
+      email: 46395539+dantte-lp@users.noreply.github.com
     homepage: "https://github.com/dantte-lp/ypcli"
     description: "CI/agents/team-first yopass CLI for sharing encrypted one-time secrets"
     license: "MIT"

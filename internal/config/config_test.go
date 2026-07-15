@@ -203,3 +203,20 @@ func TestResolveTokenEmpty(t *testing.T) {
 		t.Errorf("expected empty token, got %q err %v", tok, err)
 	}
 }
+
+func TestRunCommand(t *testing.T) {
+	if runtime.GOOS == "windows" {
+		t.Skip("uses sh")
+	}
+	// Raw stdout is preserved (unlike ResolveToken, which trims).
+	out, err := RunCommand(context.Background(), "printf 'line1\nline2\n'")
+	if err != nil {
+		t.Fatalf("RunCommand: %v", err)
+	}
+	if out != "line1\nline2\n" {
+		t.Errorf("stdout = %q, want raw with newline", out)
+	}
+	if _, err := RunCommand(context.Background(), "exit 3"); err == nil {
+		t.Error("expected error for non-zero exit")
+	}
+}

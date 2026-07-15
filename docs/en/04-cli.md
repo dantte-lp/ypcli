@@ -25,6 +25,7 @@ Encrypt and publish a secret. Input comes from `--vault-path`, `--file`,
 |---|---|
 | `--file, -f` | read the secret from a file (published as a file secret) |
 | `--text, -t` | secret text (instead of stdin/file) |
+| `--input-command` | run a command and use its stdout as the secret |
 | `--editor` | compose the secret in `$EDITOR` (default when interactive) |
 | `--expiration, -e` | lifetime: `1h`, `1d`, or `1w` (default `1h`) |
 | `--one-time` | delete after first view (default `true`) |
@@ -39,7 +40,8 @@ Encrypt and publish a secret. Input comes from `--vault-path`, `--file`,
 | `--vault-token` | Vault/OpenBao token (default `$VAULT_TOKEN` / `$BAO_TOKEN`) |
 | `--vault-namespace` | namespace (default `$VAULT_NAMESPACE` / `$BAO_NAMESPACE`) |
 
-Input priority: `--vault-path` > `--file` > `--text` > piped stdin > editor.
+Input priority: `--vault-path` > `--input-command` > `--file` > `--text` >
+piped stdin > editor.
 
 JSON output:
 

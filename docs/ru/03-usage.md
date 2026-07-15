@@ -58,6 +58,19 @@ export VAULT_ADDR=https://vault.corp VAULT_TOKEN=…
 ypcli send --vault-path db --vault-field password
 ```
 
+### Из любого менеджера секретов
+
+`--input-command` выполняет любую команду и отправляет её **сырой stdout** как
+секрет — универсальный мост к любому инструменту (AWS Secrets Manager, gopass,
+`pass`, 1Password CLI, …). Большинство менеджеров добавляют завершающий перевод
+строки; уберите его в команде, если нужно точное значение.
+
+```bash
+ypcli send --input-command 'pass show db/password'
+ypcli send --input-command 'op read op://vault/db/password'
+ypcli send --input-command 'aws secretsmanager get-secret-value --secret-id db --query SecretString --output text'
+```
+
 Для bearer-токена, которым аутентифицируются к приватному *yopass*-серверу,
 используйте `token_command` — см. [Конфигурация](05-configuration.md#токены).
 

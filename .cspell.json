@@ -67,7 +67,11 @@
     "BAO",
     "ADDR",
     "notepad",
-    "KV"
+    "KV",
+    "gopass",
+    "secretsmanager",
+    "op",
+    "aws"
   ],
   "ignorePaths": [
     "go.mod",

@@ -27,13 +27,15 @@ func (a *app) newSendCmd() *cobra.Command {
 		Example: "  printf 'secret' | ypcli send --one-time\n" +
 			"  ypcli send --file db.env --expiration 1d --json\n" +
 			"  ypcli send            # opens $EDITOR when run interactively\n" +
-			"  ypcli send --vault-path secret/db --vault-field password",
+			"  ypcli send --vault-path secret/db --vault-field password\n" +
+			"  ypcli send --input-command 'pass show db/password'",
 		Args: cobra.NoArgs,
 		RunE: a.runSend,
 	}
 	f := cmd.Flags()
 	f.StringP("file", "f", "", "read secret from a file")
 	f.StringP("text", "t", "", "secret text (instead of stdin/file)")
+	f.String("input-command", "", "run a command and use its stdout as the secret")
 	f.Bool("editor", false, "compose the secret in $EDITOR (default when interactive)")
 	f.StringP("expiration", "e", "", "lifetime: 1h, 1d or 1w")
 	f.Bool("one-time", true, "delete after first view")
@@ -82,6 +84,7 @@ func (a *app) runSend(cmd *cobra.Command, _ []string) error {
 		"one_time", oneTime, "expiration", expirationLabel(exp), "authenticated", token != "")
 
 	vaultPath, _ := cmd.Flags().GetString("vault-path")
+	inputCommand, _ := cmd.Flags().GetString("input-command")
 	filePath, _ := cmd.Flags().GetString("file")
 	var (
 		id      string
@@ -92,6 +95,13 @@ func (a *app) runSend(cmd *cobra.Command, _ []string) error {
 		var secret string
 		secret, err = readFromVault(ctx, cmd, vaultPath, s.profile)
 		if err == nil {
+			id, err = sendMessage(ctx, client, stringReader(secret), key, exp, oneTime, requireAuth, useArgon2)
+		}
+	case inputCommand != "":
+		var secret string
+		if secret, err = config.RunCommand(ctx, inputCommand); err != nil {
+			err = fmt.Errorf("input-command failed: %w", err)
+		} else {
 			id, err = sendMessage(ctx, client, stringReader(secret), key, exp, oneTime, requireAuth, useArgon2)
 		}
 	case filePath != "":

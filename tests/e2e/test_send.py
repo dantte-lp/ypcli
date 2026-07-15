@@ -83,6 +83,13 @@ def test_send_editor_mode(yp_run: Run, tmp_path: Path) -> None:
     assert yp_run("receive", url).stdout == "composed in editor"
 
 
+def test_send_from_input_command(yp_run: Run) -> None:
+    # Generic secrets-manager source: any command's stdout becomes the payload.
+    res = yp_run("send", "--input-command", "printf mgr-secret", "--json")
+    assert res.code == 0
+    assert yp_run("receive", res.json()["url"]).stdout == "mgr-secret"
+
+
 def test_send_from_vault(run: Run, yopass, fake: FakeServer) -> None:
     # Real yopass for the share, fake server acting as the Vault/OpenBao KV engine.
     fake.state.vault = {"password": "hunter2"}

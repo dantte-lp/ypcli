@@ -195,6 +195,18 @@ func (p Profile) Overlay(o Profile) Profile {
 	return p
 }
 
+// RunCommand executes command through the OS shell and returns its raw stdout.
+// It is the shared primitive behind token_command and the generic
+// --input-command secret source.
+func RunCommand(ctx context.Context, command string) (string, error) {
+	name, args := shell()
+	out, err := exec.CommandContext(ctx, name, append(args, command)...).Output() //nolint:gosec // user-configured
+	if err != nil {
+		return "", err
+	}
+	return string(out), nil
+}
+
 // ResolveToken returns the bearer token for a request. An explicit token
 // (from --token or YPCLI_TOKEN) wins; otherwise tokenCommand is executed and
 // its trimmed stdout is used. Tokens are never persisted to disk.
@@ -205,14 +217,11 @@ func ResolveToken(ctx context.Context, explicit, tokenCommand string) (string, e
 	if tokenCommand == "" {
 		return "", nil
 	}
-
-	name, args := shell()
-	cmd := exec.CommandContext(ctx, name, append(args, tokenCommand)...) //nolint:gosec // user-configured
-	out, err := cmd.Output()
+	out, err := RunCommand(ctx, tokenCommand)
 	if err != nil {
 		return "", fmt.Errorf("token_command failed: %w", err)
 	}
-	return strings.TrimSpace(string(out)), nil
+	return strings.TrimSpace(out), nil
 }
 
 // shell returns the OS shell invocation used to run token_command.

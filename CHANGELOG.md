@@ -11,6 +11,9 @@ Russian translation: [CHANGELOG.ru.md](CHANGELOG.ru.md).
 
 ### Added
 
+- `ypcli send --input-command '<cmd>'` runs any command and sends its raw stdout
+  as the secret — a generic bridge to any secrets manager (AWS Secrets Manager,
+  gopass, `pass`, 1Password CLI, …).
 - Read the secret payload directly from a HashiCorp Vault or OpenBao KV v2
   engine: `ypcli send --vault-path <path> --vault-field <field>` (with
   `--vault-addr/-token/-mount/-namespace`, honoring `VAULT_*` / `BAO_*` env).

@@ -71,7 +71,13 @@
     "gopass",
     "secretsmanager",
     "op",
-    "aws"
+    "aws",
+    "Codex",
+    "Cursor",
+    "Zed",
+    "Aider",
+    "Gemini",
+    "commitlintrc"
   ],
   "ignorePaths": [
     "go.mod",

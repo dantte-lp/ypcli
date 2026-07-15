@@ -7,6 +7,8 @@
   <a href="https://github.com/dantte-lp/ypcli/actions/workflows/ci.yml"><img src="https://img.shields.io/github/actions/workflow/status/dantte-lp/ypcli/ci.yml?branch=master&style=flat&label=CI" alt="CI"></a>
   <a href="https://github.com/dantte-lp/ypcli/actions/workflows/security.yml"><img src="https://img.shields.io/github/actions/workflow/status/dantte-lp/ypcli/security.yml?branch=master&style=flat&label=security" alt="Security"></a>
   <a href="https://github.com/dantte-lp/ypcli/actions/workflows/e2e.yml"><img src="https://img.shields.io/github/actions/workflow/status/dantte-lp/ypcli/e2e.yml?branch=master&style=flat&label=e2e" alt="E2E"></a>
+  <a href="https://github.com/dantte-lp/ypcli/actions/workflows/codeql.yml"><img src="https://img.shields.io/github/actions/workflow/status/dantte-lp/ypcli/codeql.yml?branch=master&style=flat&label=CodeQL" alt="CodeQL"></a>
+  <a href="https://scorecard.dev/viewer/?uri=github.com/dantte-lp/ypcli"><img src="https://img.shields.io/ossf-scorecard/github.com/dantte-lp/ypcli?style=flat&label=OpenSSF" alt="OpenSSF Scorecard"></a>
   <a href="https://codecov.io/gh/dantte-lp/ypcli"><img src="https://img.shields.io/codecov/c/github/dantte-lp/ypcli?style=flat&logo=codecov&logoColor=white" alt="Codecov"></a>
   <a href="https://pkg.go.dev/github.com/dantte-lp/ypcli"><img src="https://img.shields.io/badge/pkg.go.dev-reference-007d9c?style=flat&logo=go&logoColor=white" alt="pkg.go.dev"></a>
   <a href="https://goreportcard.com/report/github.com/dantte-lp/ypcli"><img src="https://img.shields.io/badge/Go_Report-A+-00ADD8?style=flat" alt="Go Report Card"></a>

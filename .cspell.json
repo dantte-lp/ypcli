@@ -71,7 +71,12 @@
     "gopass",
     "secretsmanager",
     "op",
-    "aws"
+    "aws",
+    "Codex",
+    "Cursor",
+    "Zed",
+    "Aider",
+    "Gemini"
   ],
   "ignorePaths": [
     "go.mod",

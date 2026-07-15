@@ -28,7 +28,7 @@ jobs:
         run: uv run ruff format --check .
       - name: Type-check (ty)
         working-directory: tests/e2e
-        run: uv run --with ty ty check .
+        run: uv run ty check .
       - name: End-to-end (pytest + live yopass)
         working-directory: tests/e2e
         run: uv run pytest -v

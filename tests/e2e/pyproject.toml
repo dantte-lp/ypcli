@@ -8,6 +8,12 @@ dependencies = [
     "pytest-timeout>=2.3",
 ]
 
+[dependency-groups]
+dev = [
+    "ruff>=0.15",
+    "ty>=0.0.26",
+]
+
 [tool.pytest.ini_options]
 addopts = "-ra -q --timeout=120"
 testpaths = ["."]

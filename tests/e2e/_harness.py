@@ -55,10 +55,11 @@ def run_ypcli(
 ) -> Result:
     """Invoke the ypcli binary and capture its result."""
     env = os.environ.copy()
-    # Isolate config so tests never touch the developer's real profiles.
-    env.setdefault("XDG_CONFIG_HOME", str(Path(os.environ["YPCLI_E2E_HOME"])))
     if env_extra:
         env.update(env_extra)
+    # Force per-test config isolation. setdefault is not enough: the CI runner
+    # may already export XDG_CONFIG_HOME, which would leak profiles across tests.
+    env["XDG_CONFIG_HOME"] = os.environ["YPCLI_E2E_HOME"]
     proc = subprocess.run(
         [binary, *args],
         input=stdin,

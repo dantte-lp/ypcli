@@ -25,6 +25,8 @@ rules:
       - config
       - output
       - clipboard
+      - mcp
+      - share
       - docs
       - ci
       - build
@@ -33,11 +35,14 @@ rules:
       - test
       - lint
       - security
+  # Allow acronyms (MCP, SDK, HTTP) in subjects; only forbid Title-Case / ALL-CAPS
+  # subjects, matching the @commitlint/config-conventional default.
   subject-case:
     - 2
-    - always
-    - - sentence-case
-      - lower-case
+    - never
+    - - upper-case
+      - pascal-case
+      - start-case
   header-max-length:
     - 2
     - always

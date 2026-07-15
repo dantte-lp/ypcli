@@ -1,0 +1,44 @@
+[Unit]
+Description=ypcli MCP server (yopass secret sharing for AI agents)
+Documentation=https://github.com/dantte-lp/ypcli
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+# Runs as a transient, unprivileged user with no home or shell.
+DynamicUser=yes
+# YPCLI_MCP_TOKEN (bearer for the HTTP endpoint) lives here; keep it root:root 0600.
+EnvironmentFile=/etc/ypcli/mcp.env
+# The profile config (no plaintext secrets — use token_command for auth).
+ExecStart=/usr/local/bin/ypcli mcp --http 127.0.0.1:8765 --config /etc/ypcli/config.yaml
+Restart=on-failure
+RestartSec=2
+
+# --- hardening ---
+NoNewPrivileges=yes
+ProtectSystem=strict
+ProtectHome=yes
+PrivateTmp=yes
+PrivateDevices=yes
+ProtectClock=yes
+ProtectKernelTunables=yes
+ProtectKernelModules=yes
+ProtectKernelLogs=yes
+ProtectControlGroups=yes
+ProtectProc=invisible
+RestrictAddressFamilies=AF_INET AF_INET6
+RestrictNamespaces=yes
+RestrictRealtime=yes
+RestrictSUIDSGID=yes
+LockPersonality=yes
+MemoryDenyWriteExecute=yes
+SystemCallFilter=@system-service
+SystemCallErrorNumber=EPERM
+SystemCallArchitectures=native
+CapabilityBoundingSet=
+AmbientCapabilities=
+ReadOnlyPaths=/etc/ypcli
+
+[Install]
+WantedBy=multi-user.target

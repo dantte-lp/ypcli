@@ -1,7 +1,6 @@
 package cli
 
 import (
-	"bytes"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -18,8 +17,6 @@ func newClient(baseAPI, token string) *api.Client {
 	}
 	return api.New(baseAPI, api.WithToken(token))
 }
-
-func readerOf(b []byte) io.Reader { return bytes.NewReader(b) }
 
 func stringReader(s string) io.Reader { return strings.NewReader(s) }
 

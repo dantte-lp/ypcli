@@ -93,6 +93,22 @@ endpoint. Servers older than yopass 13.x report `unsupported`.
 ypcli version --api https://api.yopass.se --json
 ```
 
+## `ypcli mcp`
+
+Run an MCP server exposing ypcli's send/receive operations to AI agents. See
+[MCP server](09-mcp.md) for the full guide.
+
+| Flag | Description |
+|---|---|
+| `--http` | serve over HTTP at this address instead of stdio (e.g. `127.0.0.1:8765`) |
+| `--http-token` | bearer token required in HTTP mode (`$YPCLI_MCP_TOKEN`) |
+| `--read-only` | expose send-only tools (omit `receive_secret`) |
+
+```bash
+ypcli mcp                                   # stdio (for a local agent)
+YPCLI_MCP_TOKEN=… ypcli mcp --http :8765    # shared HTTP server
+```
+
 ## `ypcli completion`
 
 Generate a shell completion script for `bash`, `zsh`, `fish`, or `powershell`.

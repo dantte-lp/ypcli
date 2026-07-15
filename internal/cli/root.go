@@ -92,6 +92,7 @@ func (a *app) newRootCmd() *cobra.Command {
 		a.newReceiveCmd(),
 		a.newConfigCmd(),
 		a.newVersionCmd(),
+		a.newMCPCmd(),
 	)
 	return root
 }

@@ -1,0 +1,9 @@
+{
+  "mcpServers": {
+    "ypcli": {
+      "command": "ypcli",
+      "args": ["mcp"],
+      "trust": false
+    }
+  }
+}

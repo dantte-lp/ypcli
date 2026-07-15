@@ -231,6 +231,15 @@ func TestManualKeyURLRequiresKey(t *testing.T) {
 	}
 }
 
+func TestMCPHTTPRequiresToken(t *testing.T) {
+	// --http without a token (and no YPCLI_MCP_TOKEN) is a usage error.
+	t.Setenv("YPCLI_MCP_TOKEN", "")
+	_, _, code := run(t, "mcp", "--http", "127.0.0.1:0")
+	if code != 2 {
+		t.Errorf("exit = %d, want 2 (usage: token required)", code)
+	}
+}
+
 func TestUnknownCommandExit(t *testing.T) {
 	_, _, code := run(t, "frobnicate")
 	if code == 0 {

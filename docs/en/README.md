@@ -12,3 +12,4 @@
 | 06 | [Automation](06-automation.md) | CI/agents, JSON output, exit codes |
 | 07 | [Security](07-security.md) | Cryptographic model, interoperability |
 | 08 | [Development](08-development.md) | Build, test, lint, release workflow |
+| 09 | [MCP server](09-mcp.md) | Expose ypcli to AI agents (Claude, Codex, Gemini) |

@@ -76,7 +76,8 @@
     "Cursor",
     "Zed",
     "Aider",
-    "Gemini"
+    "Gemini",
+    "commitlintrc"
   ],
   "ignorePaths": [
     "go.mod",

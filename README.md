@@ -1,20 +1,48 @@
-# ypcli
+<p align="center">
+  <strong>ypcli</strong><br>
+  CI / agents / team-first CLI for sharing end-to-end-encrypted one-time secrets via yopass
+</p>
 
-A cross-platform command-line client for [yopass](https://github.com/jhaals/yopass)
-that publishes text and files as **end-to-end-encrypted, self-expiring one-time
-secrets**. Encryption happens client-side (OpenPGP); the decryption key never
-reaches the server.
+<p align="center">
+  <a href="https://github.com/dantte-lp/ypcli/actions/workflows/ci.yml"><img src="https://img.shields.io/github/actions/workflow/status/dantte-lp/ypcli/ci.yml?branch=master&style=flat&label=CI" alt="CI"></a>
+  <a href="https://github.com/dantte-lp/ypcli/actions/workflows/security.yml"><img src="https://img.shields.io/github/actions/workflow/status/dantte-lp/ypcli/security.yml?branch=master&style=flat&label=security" alt="Security"></a>
+  <a href="https://codecov.io/gh/dantte-lp/ypcli"><img src="https://img.shields.io/codecov/c/github/dantte-lp/ypcli?style=flat&logo=codecov&logoColor=white" alt="Codecov"></a>
+  <a href="https://pkg.go.dev/github.com/dantte-lp/ypcli"><img src="https://img.shields.io/badge/pkg.go.dev-reference-007d9c?style=flat&logo=go&logoColor=white" alt="pkg.go.dev"></a>
+  <a href="https://goreportcard.com/report/github.com/dantte-lp/ypcli"><img src="https://img.shields.io/badge/Go_Report-A+-00ADD8?style=flat" alt="Go Report Card"></a>
+  <br>
+  <img src="https://img.shields.io/badge/Go-1.26-00ADD8?style=flat&logo=go&logoColor=white" alt="Go 1.26">
+  <a href="https://github.com/dantte-lp/ypcli/releases"><img src="https://img.shields.io/github/v/release/dantte-lp/ypcli?style=flat&sort=semver" alt="Release"></a>
+  <a href="https://conventionalcommits.org"><img src="https://img.shields.io/badge/Conventional_Commits-1.0.0-fe5196?style=flat" alt="Conventional Commits"></a>
+  <a href="https://github.com/dantte-lp/ypcli/blob/master/LICENSE"><img src="https://img.shields.io/badge/License-MIT-blue?style=flat" alt="License: MIT"></a>
+</p>
 
-`ypcli` is a **CI / agents / team-first** superset of the official `yopass` CLI:
+---
 
-- 🔐 **Bearer-token auth** — works with `REQUIRE_AUTH`-gated / OIDC-protected instances
-  ([`--token`](#authentication), `YPCLI_TOKEN`, or a per-profile `token_command`)
-- 🤖 **Machine-readable** — `--json` output and strict, stable [exit codes](#exit-codes)
-- 🗂 **Profiles** — target multiple yopass servers without repeating `--api/--url`
-- 🧩 **Sub-commands** — `send` / `receive` / `config` / `version` + shell completion
-- 🔁 **Byte-for-byte interoperable** with the yopass web frontend (openpgp.js v6),
-  proven by a round-trip test against upstream
-- 📦 **CGO-free static binaries** for macOS/Linux/Windows on amd64 + arm64
+**ypcli** publishes text and files to a [yopass](https://github.com/jhaals/yopass)
+server as **end-to-end-encrypted, self-expiring one-time secrets**. Encryption
+happens client-side with OpenPGP — the decryption key never reaches the server.
+
+It is a **CI / agents / team-first** superset of the official yopass CLI:
+bearer-token authentication, machine-readable JSON output, strict exit codes,
+and multiple server profiles — while staying byte-for-byte interoperable with the
+yopass web frontend (openpgp.js v6).
+
+## Why ypcli
+
+- **Works with locked-down instances.** Bearer-token auth (`--token`,
+  `YPCLI_TOKEN`, or a per-profile `token_command`) reaches `REQUIRE_AUTH` /
+  OIDC-gated servers non-interactively — the official CLI cannot.
+- **Built for automation.** `--json` on every command and stable exit codes
+  (auth vs not-found vs decrypt failures are distinguishable) make it safe to
+  script in CI and agents.
+- **Multiple servers, one tool.** Named profiles target different yopass
+  instances without repeating `--api/--url`; tokens are sourced from a command,
+  never stored in plaintext.
+- **Interoperable and minimal.** The crypto is a vendored ~150-line surface over
+  `ProtonMail/go-crypto`; interoperability with upstream is proven by a
+  **test-only** dependency that never links into the shipped binary.
+- **Everywhere.** Static, CGO-free binaries for macOS, Linux, and Windows on
+  amd64 and arm64.
 
 ## Install
 
@@ -30,12 +58,12 @@ scoop install ypcli
 go install github.com/dantte-lp/ypcli/cmd/ypcli@latest
 ```
 
-Or grab a prebuilt archive from [Releases](https://github.com/dantte-lp/ypcli/releases).
+Prebuilt archives are on the [Releases](https://github.com/dantte-lp/ypcli/releases) page.
 
-## Quick start
+## Quick Start
 
 ```bash
-# Encrypt text from stdin and print a one-time share URL
+# Encrypt text from stdin, print a one-time share URL
 printf 'my secret' | ypcli send
 
 # Encrypt a file, valid for one day
@@ -44,43 +72,64 @@ ypcli send --file ./db.env --expiration 1d
 # Receive and decrypt (text to stdout)
 ypcli receive 'https://yopass.se/#/s/ID/KEY'
 
-# Receive a file into a directory (original name preserved)
-ypcli receive 'https://yopass.se/#/f/ID/KEY' -o ./out/
-```
-
-## CI / automation
-
-`--json` and exit codes make `ypcli` safe to script:
-
-```bash
+# CI-friendly: machine-readable output
 url=$(printf "$PASSWORD" | ypcli send --json --one-time | jq -r .url)
-echo "share: $url"
 ```
 
-Against an authenticated instance, source the token from a secrets manager
-instead of storing it:
+## Architecture
 
-```bash
-ypcli config add prod \
-  --api https://api.yopass.corp \
-  --url https://yopass.corp \
-  --token-command 'vault read -field=token secret/yopass'
+```mermaid
+graph TB
+    subgraph ypcli["ypcli binary"]
+        CLI["cli<br/>cobra commands"]
+        API["api<br/>HTTP + bearer auth"]
+        CRY["crypto<br/>OpenPGP (vendored)"]
+        CFG["config<br/>profiles + token"]
+        OUT["output<br/>text / json / qr"]
+    end
 
-ypcli send --profile prod --file ./service.key --json
+    USER(["stdin / --file / --text"]) --> CLI
+    CLI --> CFG
+    CLI --> CRY
+    CLI --> API
+    CLI --> OUT
+    API -->|"HTTPS + Bearer"| SRV["yopass server<br/>/create /secret /file /config /version"]
+
+    style CRY fill:#1a73e8,color:#fff
 ```
 
-Precedence for every setting is **flag > env (`YPCLI_*`) > active profile > default**.
+The random key never leaves the client — it lives only in the URL fragment
+(`#/…`), which browsers never send to the server.
 
-### Authentication
+```mermaid
+sequenceDiagram
+    participant U as User / CI
+    participant Y as ypcli
+    participant S as yopass server
+    U->>Y: send (plaintext)
+    Y->>Y: generate key (crypto/rand)
+    Y->>S: GET /config (Argon2?)
+    Y->>Y: OpenPGP encrypt (AES-256 / GCM)
+    Y->>S: POST /create/secret (ciphertext)
+    S-->>Y: { id }
+    Y-->>U: https://…/#/s/{id}/{key}
+```
 
-| Source | Example |
-|---|---|
-| Flag | `ypcli send --token "$TOK" ...` |
-| Environment | `YPCLI_TOKEN=… ypcli send ...` |
-| Profile command | `token_command: vault read -field=token secret/yopass` |
+## Documentation
 
-The token is sent as `Authorization: Bearer <token>` and is never written to the
-config file.
+Full documentation lives in [`docs/`](docs/README.md). **English is canonical**;
+a Russian mirror is in [`docs/ru/`](docs/ru/README.md).
+
+| # | Document (EN) | RU | Description |
+|---|---|---|---|
+| 01 | [Architecture](docs/en/01-architecture.md) | [ru](docs/ru/01-architecture.md) | Packages, layers, data flow |
+| 02 | [Installation](docs/en/02-installation.md) | [ru](docs/ru/02-installation.md) | Homebrew, Scoop, winget, Go, binaries |
+| 03 | [Usage](docs/en/03-usage.md) | [ru](docs/ru/03-usage.md) | send / receive walkthroughs |
+| 04 | [CLI Reference](docs/en/04-cli.md) | [ru](docs/ru/04-cli.md) | Every command and flag |
+| 05 | [Configuration](docs/en/05-configuration.md) | [ru](docs/ru/05-configuration.md) | Profiles, precedence, tokens |
+| 06 | [Automation](docs/en/06-automation.md) | [ru](docs/ru/06-automation.md) | CI/agents, JSON, exit codes |
+| 07 | [Security](docs/en/07-security.md) | [ru](docs/ru/07-security.md) | Crypto model, interoperability |
+| 08 | [Development](docs/en/08-development.md) | [ru](docs/ru/08-development.md) | Build, test, lint, release |
 
 ## Exit codes
 
@@ -95,29 +144,17 @@ config file.
 | 6 | not found / one-time already consumed (404/410) |
 | 7 | decryption / crypto failure |
 
-## How it works
+## Contributing
 
-Text is ASCII-armored OpenPGP; files are binary OpenPGP with the filename
-embedded in the encrypted payload. Cipher `AES-256`, hash `SHA-256`, AEAD `GCM`;
-key derivation is iterated SHA-256, or memory-hard **Argon2id** when the server
-advertises it (`GET /config` → `ARGON2`), auto-detected per request. The random
-key lives only in the share URL fragment (`#/…`), which browsers never send to
-the server.
-
-See [`docs/cli.md`](docs/cli.md) for the full command reference.
-
-## Development
+Repository participation is governed by [CONTRIBUTING.md](CONTRIBUTING.md),
+[CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md), [SECURITY.md](SECURITY.md),
+[SUPPORT.md](SUPPORT.md), [GOVERNANCE.md](GOVERNANCE.md), and
+[MAINTAINERS.md](MAINTAINERS.md).
 
 ```bash
-task test    # go test -race -cover ./...
-task lint    # golangci-lint run
-task vuln    # govulncheck ./...
-task build   # build ./cmd/ypcli
+make verify    # build + test (-race) + lint + vuln
 ```
-
-Interoperability with upstream yopass is enforced by a **test-only** dependency
-on `github.com/jhaals/yopass/pkg/yopass`; it never links into the shipped binary.
 
 ## License
 
-MIT — see [LICENSE](LICENSE).
+[MIT](LICENSE) © Pavel Lavrukhin

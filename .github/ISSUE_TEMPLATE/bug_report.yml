@@ -1,0 +1,39 @@
+name: Bug report
+description: Report a defect in ypcli
+labels: [bug]
+body:
+  - type: input
+    id: version
+    attributes:
+      label: ypcli version
+      description: Output of `ypcli version`
+      placeholder: "ypcli v0.1.0 (commit …, built …)"
+    validations:
+      required: true
+  - type: input
+    id: platform
+    attributes:
+      label: OS / architecture
+      placeholder: "macOS 15 arm64"
+    validations:
+      required: true
+  - type: textarea
+    id: command
+    attributes:
+      label: Command
+      description: The exact command you ran (redact secrets).
+      render: shell
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected vs actual behavior
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Verbose output
+      description: Output of the command with `--verbose` (redact secrets).
+      render: shell

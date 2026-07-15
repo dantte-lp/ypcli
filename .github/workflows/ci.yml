@@ -2,7 +2,7 @@ name: ci
 
 on:
   push:
-    branches: [main]
+    branches: [master]
   pull_request:
 
 permissions:
@@ -22,9 +22,16 @@ jobs:
           go-version: stable
           check-latest: true
       - name: Test (race + coverage)
-        run: go test -race -coverprofile=coverage.out ./...
+        run: go test -race -coverprofile=coverage.out -covermode=atomic ./...
       - name: Build
         run: go build ./...
+      - name: Upload coverage
+        if: matrix.os == 'ubuntu-latest'
+        uses: codecov/codecov-action@v4
+        with:
+          files: coverage.out
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
 
   lint:
     runs-on: ubuntu-latest
@@ -37,6 +44,19 @@ jobs:
       - uses: golangci/golangci-lint-action@v6
         with:
           version: latest
+
+  docs:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: markdownlint
+        uses: DavidAnson/markdownlint-cli2-action@v16
+        with:
+          globs: "**/*.md"
+      - name: yamllint
+        run: pipx run yamllint .
+      - name: cspell
+        run: npx --yes cspell "**/*.md"
 
   vuln:
     runs-on: ubuntu-latest

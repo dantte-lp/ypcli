@@ -1,6 +1,9 @@
-# ypcli command reference
+# CLI Reference
 
-Global flags (available on every command):
+## Global flags
+
+Available on every command. Resolution precedence is
+**flag > env (`YPCLI_*`) > active profile > built-in default**.
 
 | Flag | Env | Description |
 |---|---|---|
@@ -10,10 +13,8 @@ Global flags (available on every command):
 | `--token` | `YPCLI_TOKEN` | bearer token for authenticated instances |
 | `--timeout` | `YPCLI_TIMEOUT` | request timeout (default `30s`) |
 | `--json` | `YPCLI_JSON` | machine-readable JSON output |
-| `--verbose, -v` | `YPCLI_VERBOSE` | verbose logging to stderr |
+| `--verbose, -v` | `YPCLI_VERBOSE` | debug logging to stderr |
 | `--config` | `YPCLI_CONFIG` | config file path |
-
-Resolution precedence: **flag > env > active profile > built-in default**.
 
 ## `ypcli send`
 
@@ -26,15 +27,9 @@ Encrypt and publish a secret. Input comes from `--file`, `--text`, or piped stdi
 | `--expiration, -e` | lifetime: `1h`, `1d`, or `1w` (default `1h`) |
 | `--one-time` | delete after first view (default `true`) |
 | `--require-auth` | require authentication to view (server support required) |
-| `--key, -k` | manual encryption key; omitted from the URL, shared out of band |
+| `--key, -k` | manual encryption key; omitted from the URL |
 | `--qr` | also render the URL as a terminal QR code (text mode) |
 | `--copy` | copy the URL to the system clipboard |
-
-```bash
-printf 'secret' | ypcli send --one-time --qr
-ypcli send --file db.env --expiration 1d --json
-echo hi | ypcli send --key "$(openssl rand -hex 16)"   # manual key
-```
 
 JSON output:
 
@@ -55,18 +50,11 @@ Fetch and decrypt a secret. Accepts a share URL positional argument, or
 | `--output, -o` | output file or directory for file secrets |
 
 - Text secrets are written to **stdout**.
-- File secrets are written to their original name, or under `-o` (a directory
-  joins the embedded filename; a path is used verbatim).
-
-```bash
-ypcli receive 'https://yopass.se/#/s/ID/KEY'
-ypcli receive 'https://yopass.se/#/c/ID' --key MANUALKEY
-ypcli receive --id ID --key KEY --file -o ./downloads/
-```
+- File secrets are written to their original name, or under `-o`.
 
 ## `ypcli config`
 
-Manage named server profiles (`$XDG_CONFIG_HOME/ypcli/config.yaml`, mode 0600).
+Manage named server profiles in `$XDG_CONFIG_HOME/ypcli/config.yaml` (mode 0600).
 
 ```bash
 ypcli config add work --api https://api.corp --url https://yp.corp \
@@ -75,6 +63,13 @@ ypcli config list      # * marks the active profile
 ypcli config use work
 ypcli config remove work
 ```
+
+| Subcommand | Flags |
+|---|---|
+| `add <name>` | `--api`, `--url`, `--expiration`, `--token-command` |
+| `list` | — |
+| `use <name>` | — |
+| `remove <name>` | — |
 
 ## `ypcli version`
 
@@ -87,8 +82,21 @@ ypcli version --api https://api.yopass.se --json
 
 ## `ypcli completion`
 
-Generate a shell completion script (`bash`, `zsh`, `fish`, `powershell`):
+Generate a shell completion script for `bash`, `zsh`, `fish`, or `powershell`.
 
 ```bash
 ypcli completion zsh > "${fpath[1]}/_ypcli"
 ```
+
+## Exit codes
+
+| Code | Meaning |
+|---|---|
+| 0 | success |
+| 1 | generic error |
+| 2 | usage / bad flags |
+| 3 | configuration error |
+| 4 | network / timeout |
+| 5 | auth failure (401/403) |
+| 6 | not found / one-time consumed (404/410) |
+| 7 | decryption / crypto failure |

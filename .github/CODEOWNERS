@@ -1,0 +1,9 @@
+# Default owner for everything in the repository.
+*                       @dantte-lp
+
+# Interop-critical crypto.
+/internal/crypto/       @dantte-lp
+
+# Release and CI automation.
+/.github/               @dantte-lp
+/.goreleaser.yaml       @dantte-lp

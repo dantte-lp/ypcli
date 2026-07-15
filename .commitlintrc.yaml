@@ -1,0 +1,48 @@
+extends:
+  - "@commitlint/config-conventional"
+
+rules:
+  type-enum:
+    - 2
+    - always
+    - - feat
+      - fix
+      - chore
+      - docs
+      - build
+      - ci
+      - refactor
+      - perf
+      - test
+      - style
+      - revert
+  scope-enum:
+    - 2
+    - always
+    - - cli
+      - api
+      - crypto
+      - config
+      - output
+      - clipboard
+      - docs
+      - ci
+      - build
+      - deps
+      - release
+      - test
+      - lint
+      - security
+  subject-case:
+    - 2
+    - always
+    - - sentence-case
+      - lower-case
+  header-max-length:
+    - 2
+    - always
+    - 100
+  body-max-line-length:
+    - 1
+    - always
+    - 120

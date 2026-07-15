@@ -39,7 +39,8 @@ archives:
     files:
       - README.md
       - LICENSE
-      - docs/cli.md
+      - CHANGELOG.md
+      - docs/en/04-cli.md
 
 checksum:
   name_template: "checksums.txt"

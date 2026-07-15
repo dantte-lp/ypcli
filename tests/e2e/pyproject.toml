@@ -1,0 +1,26 @@
+[project]
+name = "ypcli-e2e"
+version = "0.0.0"
+description = "End-to-end tests for the ypcli binary against a live yopass server"
+requires-python = ">=3.12"
+dependencies = [
+    "pytest>=8.3",
+    "pytest-timeout>=2.3",
+]
+
+[tool.pytest.ini_options]
+addopts = "-ra -q --timeout=120"
+testpaths = ["."]
+markers = [
+    "container: test requires a running yopass container (podman/docker)",
+]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "SIM", "PTH", "RUF"]
+
+[tool.ty.environment]
+python-version = "3.12"

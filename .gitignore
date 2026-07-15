@@ -4,3 +4,11 @@
 *.out
 coverage.*
 .task/
+
+# Python / uv (tests/e2e)
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+.ruff_cache/
+.ty_cache/

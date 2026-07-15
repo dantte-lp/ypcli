@@ -50,7 +50,16 @@
     "fpath",
     "CFGQ",
     "URLF",
-    "MANUALKEY"
+    "MANUALKEY",
+    "ruff",
+    "pytest",
+    "memcached",
+    "podman",
+    "astral",
+    "toml",
+    "venv",
+    "uv",
+    "ty"
   ],
   "ignorePaths": [
     "go.mod",

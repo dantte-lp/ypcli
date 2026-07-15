@@ -9,6 +9,13 @@ Russian translation: [CHANGELOG.ru.md](CHANGELOG.ru.md).
 
 ## [Unreleased]
 
+### Added
+
+- Automated Python end-to-end test suite (uv + ruff + ty) that drives the
+  `ypcli` binary against a live yopass container, covering every command, flag,
+  and exit code, plus a controllable fake server for auth and error-code cases.
+  Runnable via `make e2e` and an `e2e` CI workflow.
+
 ## [0.1.0] - 2026-07-15
 
 ### Added

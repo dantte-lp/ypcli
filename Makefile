@@ -71,6 +71,11 @@ tidy:
 vuln:
 	go run golang.org/x/vuln/cmd/govulncheck@latest ./...
 
+## e2e: Run the Python end-to-end suite (uv + ruff + ty + real yopass container)
+.PHONY: e2e
+e2e:
+	cd tests/e2e && uv run ruff check . && uv run --with ty ty check . && uv run pytest
+
 ## verify: build + test + lint + vuln
 .PHONY: verify
 verify: build test lint vuln

@@ -3,6 +3,8 @@ package cli
 import (
 	"fmt"
 
+	"github.com/dantte-lp/ypcli/internal/mcpserver"
+	"github.com/modelcontextprotocol/go-sdk/mcp"
 	"github.com/spf13/cobra"
 )
 
@@ -23,6 +25,20 @@ func (a *app) newMCPCmd() *cobra.Command {
 	return cmd
 }
 
-func (a *app) runMCP(_ *cobra.Command, _ []string) error {
-	return fmt.Errorf("mcp server not implemented yet")
+func (a *app) runMCP(cmd *cobra.Command, _ []string) error {
+	readOnly, _ := cmd.Flags().GetBool("read-only")
+	cfgPath, err := configPath(cmd.Root())
+	if err != nil {
+		return err
+	}
+	srv := mcpserver.New(mcpserver.Options{
+		ConfigPath: cfgPath,
+		ReadOnly:   readOnly,
+		Version:    a.build.Version,
+	})
+
+	if addr, _ := cmd.Flags().GetString("http"); addr != "" {
+		return fmt.Errorf("--http mode is not implemented yet")
+	}
+	return srv.Run(cmd.Context(), &mcp.StdioTransport{})
 }

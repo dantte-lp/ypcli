@@ -29,6 +29,7 @@ jobs:
       - uses: securego/gosec@master
         with:
           # G304: the CLI intentionally opens user-specified files.
-          # G204: token_command is a user-configured subprocess by design.
-          # Both are inherent to a secret-sharing CLI and reviewed in SECURITY.md.
-          args: -exclude=G204,G304 ./...
+          # G204/G702: token_command and $EDITOR are user-configured subprocesses
+          # by design (same pattern as any tool that shells out to $EDITOR).
+          # All are inherent to a secret-sharing CLI and reviewed in SECURITY.md.
+          args: -exclude=G204,G304,G702 ./...

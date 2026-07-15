@@ -1,0 +1,12 @@
+{
+  "name": "ypcli",
+  "version": "0.1.0",
+  "description": "Share end-to-end-encrypted one-time secrets via yopass",
+  "mcpServers": {
+    "ypcli": {
+      "command": "ypcli",
+      "args": ["mcp"]
+    }
+  },
+  "contextFileName": "GEMINI.md"
+}

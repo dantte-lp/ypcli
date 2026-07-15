@@ -1,0 +1,12 @@
+# Add to ~/.codex/config.toml (or a trusted project's .codex/config.toml).
+
+# stdio (local): Codex launches `ypcli mcp` as a subprocess.
+[mcp_servers.ypcli]
+command = "ypcli"
+args = ["mcp"]
+
+# HTTP (shared server): connect to a running `ypcli mcp --http` instead.
+# Comment out the stdio block above and use this:
+# [mcp_servers.ypcli]
+# url = "https://mcp.yopass.corp"
+# bearer_token_env_var = "YPCLI_MCP_TOKEN"

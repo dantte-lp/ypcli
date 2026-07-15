@@ -30,7 +30,7 @@ func (c *Client) FetchFile(ctx context.Context, id string) (body io.ReadCloser, 
 	}
 	if resp.StatusCode != http.StatusOK {
 		raw, _ := io.ReadAll(resp.Body)
-		resp.Body.Close()
+		_ = resp.Body.Close()
 		return nil, 0, serverError(resp.StatusCode, raw)
 	}
 	return resp.Body, resp.ContentLength, nil

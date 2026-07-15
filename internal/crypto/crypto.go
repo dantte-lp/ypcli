@@ -184,7 +184,7 @@ func Decrypt(r io.Reader, key string) (content, filename string, err error) {
 	n, readErr := io.ReadFull(r, head)
 	combined := io.MultiReader(bytes.NewReader(head[:n]), r)
 
-	var msgReader io.Reader = combined
+	msgReader := combined
 	if readErr == nil && string(head) == armorHeader {
 		a, decErr := armor.Decode(combined)
 		if decErr != nil {

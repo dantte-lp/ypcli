@@ -40,10 +40,10 @@ func (e *Error) Unwrap() error { return e.kind }
 
 // classify maps an HTTP status code to its sentinel kind.
 func classify(status int) error {
-	switch {
-	case status == 401 || status == 403:
+	switch status {
+	case 401, 403:
 		return ErrUnauthorized
-	case status == 404 || status == 410:
+	case 404, 410:
 		return ErrNotFound
 	default:
 		return ErrServer

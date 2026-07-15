@@ -19,11 +19,11 @@ var (
 
 func main() {
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt)
-	defer stop()
-
-	os.Exit(cli.Execute(ctx, cli.BuildInfo{
+	code := cli.Execute(ctx, cli.BuildInfo{
 		Version: version,
 		Commit:  commit,
 		Date:    date,
-	}))
+	})
+	stop()
+	os.Exit(code)
 }

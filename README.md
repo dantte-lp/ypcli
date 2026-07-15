@@ -133,6 +133,7 @@ a Russian mirror is in [`docs/ru/`](docs/ru/README.md).
 | 06 | [Automation](docs/en/06-automation.md) | [ru](docs/ru/06-automation.md) | CI/agents, JSON, exit codes |
 | 07 | [Security](docs/en/07-security.md) | [ru](docs/ru/07-security.md) | Crypto model, interoperability |
 | 08 | [Development](docs/en/08-development.md) | [ru](docs/ru/08-development.md) | Build, test, lint, release |
+| 09 | [MCP server](docs/en/09-mcp.md) | [ru](docs/ru/09-mcp.md) | Expose ypcli to AI agents (Claude/Codex/Gemini) |
 
 ## Exit codes
 

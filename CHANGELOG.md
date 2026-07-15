@@ -11,6 +11,12 @@ Russian translation: [CHANGELOG.ru.md](CHANGELOG.ru.md).
 
 ### Added
 
+- **`ypcli mcp`** — a Model Context Protocol server exposing send/receive to AI
+  agents (Claude, Codex, Gemini). Tools: `send_secret`, `send_file`,
+  `receive_secret` (omit with `--read-only`), `list_profiles`, `server_version`.
+  Serves over stdio or HTTP (`--http`, bearer-token protected). Ships a Claude
+  Agent Skill (`skills/ypcli/`), per-client configs (`integrations/`), and a
+  hardened systemd unit (`deploy/`).
 - `ypcli send --input-command '<cmd>'` runs any command and sends its raw stdout
   as the secret — a generic bridge to any secrets manager (AWS Secrets Manager,
   gopass, `pass`, 1Password CLI, …).

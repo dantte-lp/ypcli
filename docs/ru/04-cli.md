@@ -92,6 +92,22 @@ ypcli config remove work
 ypcli version --api https://api.yopass.se --json
 ```
 
+## `ypcli mcp`
+
+Запустить MCP-сервер, экспонирующий операции send/receive ypcli ИИ-агентам. См.
+[MCP-сервер](09-mcp.md) для полного руководства.
+
+| Флаг | Описание |
+|---|---|
+| `--http` | обслуживать по HTTP на этом адресе вместо stdio (напр. `127.0.0.1:8765`) |
+| `--http-token` | bearer-токен, обязательный в HTTP-режиме (`$YPCLI_MCP_TOKEN`) |
+| `--read-only` | экспонировать только send-инструменты (без `receive_secret`) |
+
+```bash
+ypcli mcp                                   # stdio (для локального агента)
+YPCLI_MCP_TOKEN=… ypcli mcp --http :8765    # общий HTTP-сервер
+```
+
 ## `ypcli completion`
 
 Сгенерировать скрипт автодополнения оболочки для `bash`, `zsh`, `fish` или `powershell`.

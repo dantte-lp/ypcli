@@ -110,7 +110,7 @@ func (a *app) resolve(cmd *cobra.Command) (*settings, error) {
 	}
 
 	profName := stringFlagOrEnv(root, "profile", "YPCLI_PROFILE")
-	profile, err := cfg.Profile(profName)
+	profile, err := cfg.Effective(profName)
 	if err != nil {
 		return nil, fmt.Errorf("%w: %w", errConfig, err)
 	}

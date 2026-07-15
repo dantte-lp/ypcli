@@ -91,6 +91,45 @@ func TestProfileSelection(t *testing.T) {
 	}
 }
 
+func TestEffectiveGlobalDefaults(t *testing.T) {
+	cfg := &Config{
+		Defaults: Profile{API: "https://global-api", URL: "https://global", Expiration: "1d"},
+		Active:   "work",
+		Profiles: map[string]Profile{
+			"work": {API: "https://work-api"}, // overrides only the API
+			"bare": {},
+		},
+	}
+
+	// No profile selected and none active-less: defaults alone.
+	empty := &Config{Defaults: Profile{API: "https://d"}}
+	if p, _ := empty.Effective(""); p.API != "https://d" {
+		t.Errorf("defaults-only API = %q", p.API)
+	}
+
+	// Active profile overlays the defaults (profile wins where set).
+	got, err := cfg.Effective("")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got.API != "https://work-api" {
+		t.Errorf("API = %q, want profile override", got.API)
+	}
+	if got.URL != "https://global" || got.Expiration != "1d" {
+		t.Errorf("unset profile fields should fall back to defaults: %+v", got)
+	}
+
+	// A bare profile inherits everything from defaults.
+	bare, _ := cfg.Effective("bare")
+	if bare.API != "https://global-api" || bare.URL != "https://global" {
+		t.Errorf("bare profile should inherit defaults: %+v", bare)
+	}
+
+	if _, err := cfg.Effective("missing"); err == nil {
+		t.Error("expected error for unknown profile")
+	}
+}
+
 func TestOverlayPrecedence(t *testing.T) {
 	base := Profile{API: "base-api", URL: "base-url", Expiration: "1h", OneTime: new(true)}
 	over := Profile{API: "over-api", Argon2: new(true)}

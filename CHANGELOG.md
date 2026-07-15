@@ -11,6 +11,10 @@ Russian translation: [CHANGELOG.ru.md](CHANGELOG.ru.md).
 
 ### Added
 
+- Global defaults: a top-level `defaults` block in the config file (managed with
+  `ypcli config defaults`) that applies beneath every profile, so a self-hosted
+  server can be targeted without creating a profile. Precedence is now
+  flag > env > active profile > global defaults > built-in default.
 - Automated Python end-to-end test suite (uv + ruff + ty) that drives the
   `ypcli` binary against a live yopass container, covering every command, flag,
   and exit code, plus a controllable fake server for auth and error-code cases.

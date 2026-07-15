@@ -27,6 +27,27 @@ def test_config_use_unknown_is_usage_error(run: Run) -> None:
 
 
 @pytest.mark.container
+def test_global_defaults_drive_send(run: Run, yopass: Yopass) -> None:
+    # Global defaults (no profile) point ypcli at the server; send needs no --api.
+    assert run("config", "defaults", "--api", yopass.api, "--url", yopass.url).code == 0
+    res = run("send", "--json", stdin="via global defaults")
+    assert res.code == 0
+    url = res.json()["url"]
+    assert url.startswith(yopass.url)
+    assert run("receive", url).stdout == "via global defaults"
+
+
+@pytest.mark.container
+def test_profile_overrides_global_defaults(run: Run, yopass: Yopass) -> None:
+    # A profile that only sets url inherits the api from global defaults.
+    assert run("config", "defaults", "--api", yopass.api).code == 0
+    assert run("config", "add", "u", "--url", yopass.url).code == 0
+    res = run("send", "--profile", "u", "--json", stdin="merged")
+    assert res.code == 0
+    assert run("receive", "--profile", "u", res.json()["url"]).stdout == "merged"
+
+
+@pytest.mark.container
 def test_profile_drives_send_and_receive(run: Run, yopass: Yopass) -> None:
     run("config", "add", "yp", "--api", yopass.api, "--url", yopass.url)
     res = run("send", "--profile", "yp", "--json", stdin="via profile")

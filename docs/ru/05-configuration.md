@@ -6,12 +6,13 @@
 
 ```mermaid
 flowchart LR
-    FLAG["command flag"] --> ENV["env YPCLI_*"] --> PROF["active profile"] --> DEF["built-in default"]
+    FLAG["command flag"] --> ENV["env YPCLI_*"] --> PROF["active profile"] --> GLOB["global defaults"] --> DEF["built-in default"]
 ```
 
 Например, `--api` имеет приоритет над `YPCLI_API`, который имеет приоритет над
-`api` активного профиля, который имеет приоритет над публичным значением по
-умолчанию `https://api.yopass.se`.
+`api` активного профиля, который имеет приоритет над `defaults.api` верхнего
+уровня, который имеет приоритет над встроенным публичным значением
+`https://api.yopass.se`.
 
 ## Файл конфигурации
 
@@ -19,14 +20,14 @@ flowchart LR
 `~/.config/ypcli/config.yaml`) и записываются с правами `0600`.
 
 ```yaml
+defaults:                      # global defaults, applied beneath every profile
+  api: https://api.yopass.corp
+  url: https://yopass.corp
+  expiration: 1d
 active: work
 profiles:
   work:
-    api: https://api.yopass.corp
-    url: https://yopass.corp
-    expiration: 1d
-    one_time: true
-    argon2: true
+    argon2: true               # inherits api/url/expiration from defaults
     token_command: vault read -field=token secret/yopass
   public:
     api: https://api.yopass.se
@@ -43,6 +44,23 @@ profiles:
 | `token_command` | shell-команда, выводящая bearer token в stdout |
 
 Управляйте профилями с помощью [`ypcli config`](04-cli.md#ypcli-config).
+
+## Глобальные дефолты
+
+Блок `defaults` верхнего уровня содержит настройки, применяемые под **каждым**
+профилем: они заполняют любое поле, не заданное активным профилем (и
+флагами/env), до встроенных публичных значений. Это позволяет указать
+self-hosted сервер один раз, вообще без профиля:
+
+```bash
+ypcli config defaults --api https://api.yopass.corp --url https://yopass.corp
+printf 'secret' | ypcli send    # использует глобальные дефолты, без --api
+```
+
+`ypcli config defaults` принимает `--api`, `--url`, `--expiration` и
+`--token-command`. Профиль переопределяет глобальный дефолт только для полей,
+которые он задаёт: профиль, задающий только `url`, всё равно наследует `api` из
+`defaults`.
 
 ## Токены
 

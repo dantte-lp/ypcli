@@ -70,6 +70,7 @@ ypcli config remove work
 | `list` | — |
 | `use <name>` | — |
 | `remove <name>` | — |
+| `defaults` | `--api`, `--url`, `--expiration`, `--token-command` (global defaults) |
 
 ## `ypcli version`
 

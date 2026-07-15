@@ -34,7 +34,13 @@ type Profile struct {
 }
 
 // Config is the root document persisted to disk.
+//
+// Defaults holds global settings that apply beneath every profile: they fill
+// any field the active profile (and flags/env) leave unset, before the built-in
+// public defaults. This lets a user point ypcli at a self-hosted server once,
+// without creating a profile.
 type Config struct {
+	Defaults Profile            `yaml:"defaults,omitempty"`
 	Active   string             `yaml:"active,omitempty"`
 	Profiles map[string]Profile `yaml:"profiles,omitempty"`
 }
@@ -107,6 +113,26 @@ func (c *Config) Profile(name string) (Profile, error) {
 		return Profile{}, fmt.Errorf("unknown profile %q", name)
 	}
 	return p, nil
+}
+
+// Effective returns the resolved settings for the given profile name (empty
+// selects the active profile): the global Defaults overlaid with that profile.
+// When no profile is selected it returns the global Defaults alone; the caller
+// fills the built-in public defaults for any field still unset. An unknown name
+// is an error.
+func (c *Config) Effective(name string) (Profile, error) {
+	if name == "" {
+		name = c.Active
+	}
+	eff := c.Defaults
+	if name != "" {
+		p, ok := c.Profiles[name]
+		if !ok {
+			return Profile{}, fmt.Errorf("unknown profile %q", name)
+		}
+		eff = eff.Overlay(p)
+	}
+	return eff, nil
 }
 
 // Overlay returns a copy of p with every non-zero field of o applied on top.

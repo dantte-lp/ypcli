@@ -6,11 +6,12 @@ Every setting resolves in this exact order:
 
 ```mermaid
 flowchart LR
-    FLAG["command flag"] --> ENV["env YPCLI_*"] --> PROF["active profile"] --> DEF["built-in default"]
+    FLAG["command flag"] --> ENV["env YPCLI_*"] --> PROF["active profile"] --> GLOB["global defaults"] --> DEF["built-in default"]
 ```
 
 For example, `--api` wins over `YPCLI_API`, which wins over the active profile's
-`api`, which wins over the public default `https://api.yopass.se`.
+`api`, which wins over the top-level `defaults.api`, which wins over the public
+built-in `https://api.yopass.se`.
 
 ## Config file
 
@@ -18,14 +19,14 @@ Profiles are stored in `$XDG_CONFIG_HOME/ypcli/config.yaml` (falling back to
 `~/.config/ypcli/config.yaml`), written with mode `0600`.
 
 ```yaml
+defaults:                      # global defaults, applied beneath every profile
+  api: https://api.yopass.corp
+  url: https://yopass.corp
+  expiration: 1d
 active: work
 profiles:
   work:
-    api: https://api.yopass.corp
-    url: https://yopass.corp
-    expiration: 1d
-    one_time: true
-    argon2: true
+    argon2: true               # inherits api/url/expiration from defaults
     token_command: vault read -field=token secret/yopass
   public:
     api: https://api.yopass.se
@@ -42,6 +43,22 @@ profiles:
 | `token_command` | shell command that prints a bearer token to stdout |
 
 Manage profiles with [`ypcli config`](04-cli.md#ypcli-config).
+
+## Global defaults
+
+The top-level `defaults` block holds settings that apply beneath **every**
+profile: they fill any field the active profile (and flags/env) leave unset,
+before the built-in public defaults. This lets you target a self-hosted server
+once, with no profile at all:
+
+```bash
+ypcli config defaults --api https://api.yopass.corp --url https://yopass.corp
+printf 'secret' | ypcli send    # uses the global defaults, no --api needed
+```
+
+`ypcli config defaults` accepts `--api`, `--url`, `--expiration`, and
+`--token-command`. A profile overrides a global default only for the fields it
+sets — a profile that sets just `url` still inherits `api` from `defaults`.
 
 ## Tokens
 

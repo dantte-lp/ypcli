@@ -20,7 +20,50 @@ func (a *app) newConfigCmd() *cobra.Command {
 		a.newConfigListCmd(),
 		a.newConfigUseCmd(),
 		a.newConfigRemoveCmd(),
+		a.newConfigDefaultsCmd(),
 	)
+	return cmd
+}
+
+func (a *app) newConfigDefaultsCmd() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "defaults",
+		Short: "Set global defaults applied beneath every profile",
+		Long: "Set global defaults stored at the top level of the config file. They\n" +
+			"fill any field the active profile, flags and env leave unset, so ypcli\n" +
+			"can target a self-hosted server without creating a profile.",
+		Args: cobra.NoArgs,
+		RunE: func(cmd *cobra.Command, _ []string) error {
+			path, cfg, err := loadConfigForWrite(cmd)
+			if err != nil {
+				return err
+			}
+			d := cfg.Defaults
+			if v := changedString(cmd, "api"); v != "" {
+				d.API = v
+			}
+			if v := changedString(cmd, "url"); v != "" {
+				d.URL = v
+			}
+			if v := changedString(cmd, "expiration"); v != "" {
+				d.Expiration = v
+			}
+			if v := changedString(cmd, "token-command"); v != "" {
+				d.TokenCommand = v
+			}
+			cfg.Defaults = d
+			if err := cfg.Save(path); err != nil {
+				return fmt.Errorf("%w: %w", errConfig, err)
+			}
+			fmt.Fprintln(cmd.OutOrStdout(), "saved global defaults")
+			return nil
+		},
+	}
+	f := cmd.Flags()
+	f.String("api", "", "default yopass API base URL")
+	f.String("url", "", "default yopass public URL")
+	f.String("expiration", "", "default expiration (1h, 1d, 1w)")
+	f.String("token-command", "", "default shell command that prints a bearer token")
 	return cmd
 }
 
@@ -75,6 +118,9 @@ func (a *app) newConfigListCmd() *cobra.Command {
 			_, cfg, err := loadConfigForWrite(cmd)
 			if err != nil {
 				return err
+			}
+			if cfg.Defaults.API != "" || cfg.Defaults.URL != "" {
+				fmt.Fprintf(cmd.OutOrStdout(), "  (defaults)\t%s\n", cfg.Defaults.API)
 			}
 			names := make([]string, 0, len(cfg.Profiles))
 			for name := range cfg.Profiles {

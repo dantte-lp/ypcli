@@ -84,6 +84,17 @@ func ValidExpirationSeconds(seconds int32) bool {
 	return false
 }
 
+// ExpirationLabel is the inverse of ExpirationSeconds: it renders seconds as a
+// human-readable duration ("1h"/"1d"/"1w"), falling back to "<n>s".
+func ExpirationLabel(seconds int32) string {
+	for label, ttl := range expirations {
+		if ttl == seconds {
+			return label
+		}
+	}
+	return fmt.Sprintf("%ds", seconds)
+}
+
 // Encrypt reads plaintext from r and returns ASCII-armored ciphertext.
 func Encrypt(r io.Reader, key string) (string, error) {
 	return encrypt(r, key, pgpConfig)

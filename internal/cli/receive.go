@@ -12,6 +12,7 @@ import (
 	"github.com/dantte-lp/ypcli/internal/config"
 	"github.com/dantte-lp/ypcli/internal/crypto"
 	"github.com/dantte-lp/ypcli/internal/output"
+	"github.com/dantte-lp/ypcli/internal/share"
 	"github.com/spf13/cobra"
 )
 
@@ -63,48 +64,40 @@ func (a *app) runReceive(cmd *cobra.Command, args []string) error {
 }
 
 func (a *app) receiveText(ctx context.Context, cmd *cobra.Command, s *settings, client *api.Client, id, key string) error {
-	msg, err := client.FetchSecret(ctx, id)
-	if err != nil {
-		return err
-	}
-	plaintext, _, err := crypto.Decrypt(stringReader(msg), key)
+	res, err := share.Receive(ctx, client, share.Target{ID: id, Key: key})
 	if err != nil {
 		return err
 	}
 
 	if out, _ := cmd.Flags().GetString("output"); out != "" {
-		if err := writeFile(out, []byte(plaintext)); err != nil {
+		if err := writeFile(out, []byte(res.Content)); err != nil {
 			return err
 		}
-		return s.printer(cmd).Receive(output.ReceiveResult{Written: out, Bytes: len(plaintext)})
+		return s.printer(cmd).Receive(output.ReceiveResult{Written: out, Bytes: len(res.Content)})
 	}
-	return s.printer(cmd).Receive(output.ReceiveResult{Content: plaintext})
+	return s.printer(cmd).Receive(output.ReceiveResult{Content: res.Content})
 }
 
 func (a *app) receiveFile(ctx context.Context, cmd *cobra.Command, s *settings, client *api.Client, id, key string) error {
-	body, size, err := client.FetchFile(ctx, id)
-	if err != nil {
-		return err
-	}
-	defer body.Close()
-
-	var src io.Reader = body
+	target := share.Target{ID: id, Key: key, File: true}
 	if !s.jsonMode {
-		src = output.NewProgressReader(body, size, cmd.ErrOrStderr(), "downloading")
+		target.Wrap = func(r io.Reader, total int64) io.Reader {
+			return output.NewProgressReader(r, total, cmd.ErrOrStderr(), "downloading")
+		}
 	}
 
-	plaintext, filename, err := crypto.Decrypt(src, key)
+	res, err := share.Receive(ctx, client, target)
 	if err != nil {
 		return err
 	}
 
 	out, _ := cmd.Flags().GetString("output")
-	dest := destPath(out, filename, id)
-	if err := writeFile(dest, []byte(plaintext)); err != nil {
+	dest := destPath(out, res.Filename, id)
+	if err := writeFile(dest, []byte(res.Content)); err != nil {
 		return err
 	}
 	return s.printer(cmd).Receive(output.ReceiveResult{
-		Written: dest, Filename: filename, Bytes: len(plaintext),
+		Written: dest, Filename: res.Filename, Bytes: len(res.Content),
 	})
 }
 

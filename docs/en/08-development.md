@@ -4,6 +4,7 @@
 
 - Go (see `go.mod` for the required version)
 - `golangci-lint` v2
+- For end-to-end tests: [`uv`] and a container engine (`podman` or `docker`)
 - Optional: `goreleaser`, `markdownlint-cli2`, `yamllint`, `cspell`
 
 ## Make targets
@@ -15,6 +16,7 @@ make lint        # golangci-lint v2
 make lint-docs   # markdownlint + yamllint + cspell
 make vuln        # govulncheck ./...
 make verify      # build + test + lint + vuln
+make e2e         # end-to-end suite (uv + ruff + ty + live yopass container)
 make snapshot    # local goreleaser snapshot
 ```
 
@@ -29,6 +31,7 @@ internal/
   config/         profiles, token sourcing
   output/         printers, qr, progress
   clipboard/      clipboard wrapper
+tests/e2e/        Python end-to-end suite (uv + ruff + ty)
 docs/en, docs/ru  bilingual documentation
 ```
 
@@ -44,6 +47,40 @@ Confirm the dependency never links into the binary:
 go build -o /tmp/ypcli ./cmd/ypcli
 go tool nm /tmp/ypcli | grep -c jhaals/yopass   # expect 0
 ```
+
+## End-to-end tests
+
+The Go unit tests cover functions in isolation; the `tests/e2e/` suite is a
+black-box layer that drives the **compiled `ypcli` binary** against a **live
+yopass server** (started in a container) to verify every command, flag, and exit
+code end to end. It is a Python project managed with [`uv`], linted with
+[`ruff`], and type-checked with [`ty`].
+
+```bash
+make e2e
+# or, from tests/e2e:
+uv run ruff check .
+uv run ty check .
+uv run pytest -v
+```
+
+The session fixture builds the binary once and starts `memcached` +
+`jhaals/yopass` via `podman`/`docker`; a small in-process fake server covers
+cases the free image cannot produce deterministically (auth `401`, missing
+`/version`, request-header capture). Cryptographic interoperability with the
+real yopass/openpgp.js is proven separately by the [interoperability
+gate](#interoperability-gate).
+
+Useful environment variables:
+
+| Variable | Effect |
+|---|---|
+| `YPCLI_BIN` | Use an existing `ypcli` binary instead of building one |
+| `YPCLI_E2E_API` | Target an already-running yopass server (skip container startup) |
+| `YPCLI_E2E_ARGON2` | Set to `1` when that external server has Argon2 enabled |
+
+Coverage is documented in [`tests/e2e/README.md`](../../tests/e2e/README.md).
+The `e2e` GitHub Actions workflow runs the suite on every push and pull request.
 
 ## Coding standards
 
@@ -66,3 +103,7 @@ git push origin v0.1.0
 
 The release workflow requires `TAP_GITHUB_TOKEN` (write access to the tap,
 bucket, and winget repositories) in addition to the default `GITHUB_TOKEN`.
+
+[`uv`]: https://docs.astral.sh/uv/
+[`ruff`]: https://docs.astral.sh/ruff/
+[`ty`]: https://github.com/astral-sh/ty

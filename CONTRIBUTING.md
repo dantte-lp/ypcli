@@ -26,9 +26,13 @@ make lint        # golangci-lint v2
 make lint-docs   # markdownlint + yamllint + cspell
 make vuln        # govulncheck ./...
 make verify      # build + test + lint + docs + vuln
+make e2e         # end-to-end suite (uv + ruff + ty + live yopass container)
 ```
 
-A local Go toolchain is required; the CLI builds with `CGO_ENABLED=0`.
+A local Go toolchain is required; the CLI builds with `CGO_ENABLED=0`. The
+end-to-end suite additionally needs [`uv`](https://docs.astral.sh/uv/) and a
+container engine (`podman` or `docker`); see
+[docs/en/08-development.md](docs/en/08-development.md#end-to-end-tests).
 
 ## Documentation and Release Standards
 
@@ -96,6 +100,7 @@ Allowed scopes: `cli`, `api`, `crypto`, `config`, `output`, `clipboard`,
 
 - [ ] Tests added or updated
 - [ ] `make verify` passes
+- [ ] `make e2e` passes for CLI behavior changes
 - [ ] `make lint-docs` passes for documentation changes
 - [ ] Interop test passes for crypto changes
 - [ ] Documentation updated in `docs/en/` and `docs/ru/` (if applicable)

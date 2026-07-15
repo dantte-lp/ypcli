@@ -1,0 +1,97 @@
+version: 2
+
+project_name: ypcli
+
+before:
+  hooks:
+    - go mod tidy
+
+builds:
+  - id: ypcli
+    main: ./cmd/ypcli
+    binary: ypcli
+    env:
+      - CGO_ENABLED=0
+    flags:
+      - -trimpath
+    ldflags:
+      - -s -w
+      - -X main.version={{.Version}}
+      - -X main.commit={{.Commit}}
+      - -X main.date={{.CommitDate}}
+    goos:
+      - linux
+      - darwin
+      - windows
+    goarch:
+      - amd64
+      - arm64
+    mod_timestamp: "{{ .CommitTimestamp }}"
+
+archives:
+  - id: default
+    formats: [tar.gz]
+    format_overrides:
+      - goos: windows
+        formats: [zip]
+    name_template: >-
+      {{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}
+    files:
+      - README.md
+      - LICENSE
+      - docs/cli.md
+
+checksum:
+  name_template: "checksums.txt"
+  algorithm: sha256
+
+snapshot:
+  version_template: "{{ incpatch .Version }}-snapshot"
+
+changelog:
+  sort: asc
+  use: github
+  filters:
+    exclude:
+      - "^docs:"
+      - "^test:"
+      - "^chore:"
+      - "merge conflict"
+
+homebrew_casks:
+  - name: ypcli
+    repository:
+      owner: dantte-lp
+      name: homebrew-tap
+      token: "{{ .Env.TAP_GITHUB_TOKEN }}"
+    homepage: "https://github.com/dantte-lp/ypcli"
+    description: "CI/agents/team-first yopass CLI for sharing encrypted one-time secrets"
+    license: "MIT"
+    # Remove the macOS quarantine attribute so the unsigned binary runs.
+    hooks:
+      post:
+        install: |
+          if OS.mac? && File.exist?("#{staged_path}/ypcli")
+            system_command "/usr/bin/xattr", args: ["-dr", "com.apple.quarantine", "#{staged_path}/ypcli"]
+          end
+
+scoops:
+  - repository:
+      owner: dantte-lp
+      name: scoop-bucket
+      token: "{{ .Env.TAP_GITHUB_TOKEN }}"
+    homepage: "https://github.com/dantte-lp/ypcli"
+    description: "CI/agents/team-first yopass CLI for sharing encrypted one-time secrets"
+    license: "MIT"
+
+winget:
+  - name: ypcli
+    publisher: dantte-lp
+    short_description: "CI/agents/team-first yopass CLI for sharing encrypted one-time secrets"
+    license: "MIT"
+    homepage: "https://github.com/dantte-lp/ypcli"
+    repository:
+      owner: dantte-lp
+      name: winget-pkgs
+      branch: "ypcli-{{.Version}}"
+      token: "{{ .Env.TAP_GITHUB_TOKEN }}"

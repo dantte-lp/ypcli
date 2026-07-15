@@ -5,6 +5,8 @@ package cli
 import (
 	"context"
 	"fmt"
+	"io"
+	"log/slog"
 	"os"
 	"strings"
 	"time"
@@ -37,6 +39,7 @@ type settings struct {
 	jsonMode bool
 	verbose  bool
 	profile  config.Profile
+	log      *slog.Logger
 }
 
 // Execute builds and runs the command tree, returning the process exit code.
@@ -124,15 +127,27 @@ func (a *app) resolve(cmd *cobra.Command) (*settings, error) {
 	v.SetDefault("url", coalesce(profile.URL, config.DefaultURL))
 	v.SetDefault("timeout", 30*time.Second)
 
+	verbose := v.GetBool("verbose")
 	return &settings{
 		api:      strings.TrimSuffix(v.GetString("api"), "/"),
 		url:      strings.TrimSuffix(v.GetString("url"), "/"),
 		token:    v.GetString("token"),
 		timeout:  v.GetDuration("timeout"),
 		jsonMode: v.GetBool("json"),
-		verbose:  v.GetBool("verbose"),
+		verbose:  verbose,
 		profile:  profile,
+		log:      newLogger(cmd.ErrOrStderr(), verbose),
 	}, nil
+}
+
+// newLogger returns a slog logger writing to w. At non-verbose levels only
+// warnings and above are emitted, keeping normal runs quiet.
+func newLogger(w io.Writer, verbose bool) *slog.Logger {
+	level := slog.LevelWarn
+	if verbose {
+		level = slog.LevelDebug
+	}
+	return slog.New(slog.NewTextHandler(w, &slog.HandlerOptions{Level: level}))
 }
 
 // printer builds the output printer for a command from its streams.

@@ -66,6 +66,8 @@ func (a *app) runSend(cmd *cobra.Command, _ []string) error {
 	}
 	client := newClient(s.api, token)
 	useArgon2 := resolveArgon2(ctx, client, s.profile)
+	s.log.Debug("sending secret", "api", s.api, "argon2", useArgon2,
+		"one_time", oneTime, "expiration", expirationLabel(exp), "authenticated", token != "")
 
 	filePath, _ := cmd.Flags().GetString("file")
 	var (

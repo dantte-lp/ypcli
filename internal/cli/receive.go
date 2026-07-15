@@ -6,6 +6,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/dantte-lp/ypcli/internal/api"
 	"github.com/dantte-lp/ypcli/internal/config"
@@ -53,6 +54,7 @@ func (a *app) runReceive(cmd *cobra.Command, args []string) error {
 		return err
 	}
 	client := newClient(s.api, token)
+	s.log.Debug("receiving secret", "api", s.api, "id", id, "file", fileOpt, "authenticated", token != "")
 
 	if fileOpt {
 		return a.receiveFile(ctx, cmd, s, client, id, key)
@@ -71,8 +73,8 @@ func (a *app) receiveText(ctx context.Context, cmd *cobra.Command, s *settings, 
 	}
 
 	if out, _ := cmd.Flags().GetString("output"); out != "" {
-		if err := os.WriteFile(out, []byte(plaintext), 0o600); err != nil {
-			return fmt.Errorf("write output: %w", err)
+		if err := writeFile(out, []byte(plaintext)); err != nil {
+			return err
 		}
 		return s.printer(cmd).Receive(output.ReceiveResult{Written: out, Bytes: len(plaintext)})
 	}
@@ -98,8 +100,8 @@ func (a *app) receiveFile(ctx context.Context, cmd *cobra.Command, s *settings, 
 
 	out, _ := cmd.Flags().GetString("output")
 	dest := destPath(out, filename, id)
-	if err := os.WriteFile(dest, []byte(plaintext), 0o600); err != nil {
-		return fmt.Errorf("write output: %w", err)
+	if err := writeFile(dest, []byte(plaintext)); err != nil {
+		return err
 	}
 	return s.printer(cmd).Receive(output.ReceiveResult{
 		Written: dest, Filename: filename, Bytes: len(plaintext),
@@ -138,8 +140,9 @@ func receiveTarget(cmd *cobra.Command, args []string) (id, key string, fileOpt b
 }
 
 // destPath resolves where to write a received file. An empty out uses the
-// embedded filename; a directory out joins the filename; otherwise out is the
-// exact path. id is a last-resort filename.
+// embedded filename; a directory out (existing, or written with a trailing
+// separator) joins the filename; otherwise out is the exact path. id is a
+// last-resort filename.
 func destPath(out, filename, id string) string {
 	name := filename
 	if name == "" {
@@ -148,8 +151,31 @@ func destPath(out, filename, id string) string {
 	if out == "" {
 		return name
 	}
-	if info, err := os.Stat(out); err == nil && info.IsDir() {
+	if looksLikeDir(out) {
 		return filepath.Join(out, name)
 	}
 	return out
+}
+
+// looksLikeDir reports whether out should be treated as a directory: it either
+// exists as one, or ends with a path separator (directory intent).
+func looksLikeDir(out string) bool {
+	if strings.HasSuffix(out, "/") || strings.HasSuffix(out, string(os.PathSeparator)) {
+		return true
+	}
+	info, err := os.Stat(out)
+	return err == nil && info.IsDir()
+}
+
+// writeFile writes data to path (mode 0600), creating parent directories.
+func writeFile(path string, data []byte) error {
+	if dir := filepath.Dir(path); dir != "" {
+		if err := os.MkdirAll(dir, 0o700); err != nil {
+			return fmt.Errorf("create output dir: %w", err)
+		}
+	}
+	if err := os.WriteFile(path, data, 0o600); err != nil {
+		return fmt.Errorf("write output: %w", err)
+	}
+	return nil
 }

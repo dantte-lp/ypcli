@@ -54,6 +54,12 @@ Russian translation: [CHANGELOG.ru.md](CHANGELOG.ru.md).
 - **Cross-platform release** — goreleaser matrix for macOS/Linux/Windows on
   amd64 + arm64, with Homebrew cask, Scoop, and winget publishing.
 
+### Fixed
+
+- The file-download progress line is now terminated with a newline once the
+  stream finishes, even for readers that report `io.EOF` on a separate
+  zero-byte read (e.g. HTTP bodies).
+
 ### Security
 
 - Byte-for-byte OpenPGP interoperability with the yopass web frontend

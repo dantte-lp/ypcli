@@ -28,7 +28,10 @@ func (p *progressReader) Read(b []byte) (int, error) {
 		done := p.read.Add(int64(n))
 		pct := done * 100 / p.total
 		fmt.Fprintf(p.w, "\r%s %d%% (%d/%d bytes)", p.label, pct, done, p.total)
-		if err == io.EOF {
+		// Terminate the rewritten line once the stream is drained. Most readers
+		// (e.g. HTTP bodies) return the final data with a nil error and signal
+		// io.EOF only on a subsequent zero-byte read, so key off the byte count.
+		if done >= p.total || err == io.EOF {
 			fmt.Fprintln(p.w)
 		}
 	}

@@ -5,22 +5,33 @@
 package clipboard
 
 import (
+	"errors"
 	"fmt"
 
 	"github.com/atotto/clipboard"
 )
 
+// errUnavailable is returned when no system clipboard utility is present.
+var errUnavailable = errors.New("clipboard not available on this system")
+
+// Indirections over atotto/clipboard so the behavior is unit-testable without a
+// real clipboard.
+var (
+	unsupported = clipboard.Unsupported
+	writeAll    = clipboard.WriteAll
+)
+
 // Available reports whether a system clipboard utility is usable.
 func Available() bool {
-	return !clipboard.Unsupported
+	return !unsupported
 }
 
 // Copy writes s to the system clipboard.
 func Copy(s string) error {
-	if clipboard.Unsupported {
-		return fmt.Errorf("clipboard not available on this system")
+	if unsupported {
+		return errUnavailable
 	}
-	if err := clipboard.WriteAll(s); err != nil {
+	if err := writeAll(s); err != nil {
 		return fmt.Errorf("copy to clipboard: %w", err)
 	}
 	return nil

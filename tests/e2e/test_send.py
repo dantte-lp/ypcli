@@ -107,6 +107,32 @@ def test_send_from_vault(run: Run, yopass, fake: FakeServer) -> None:
     assert run("receive", url, "--api", yopass.api).stdout == "hunter2"
 
 
+def test_send_from_profile_vault(run: Run, yopass, fake: FakeServer) -> None:
+    # Vault connection settings come from a profile's vault block, not flags.
+    fake.state.vault = {"password": "prof-secret"}
+    assert (
+        run(
+            "config",
+            "add",
+            "corp",
+            "--api",
+            yopass.api,
+            "--url",
+            yopass.url,
+            "--vault-addr",
+            fake.api,
+            "--vault-token-command",
+            f"printf {fake.state.valid_token}",
+        ).code
+        == 0
+    )
+    res = run(
+        "send", "--profile", "corp", "--vault-path", "db", "--vault-field", "password", "--json"
+    )
+    assert res.code == 0
+    assert run("receive", res.json()["url"], "--api", yopass.api).stdout == "prof-secret"
+
+
 def test_send_from_vault_wrong_token_is_auth_error(run: Run, yopass, fake: FakeServer) -> None:
     res = run(
         "send",

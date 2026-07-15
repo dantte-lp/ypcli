@@ -91,6 +91,31 @@ func TestProfileSelection(t *testing.T) {
 	}
 }
 
+func TestOverlayVault(t *testing.T) {
+	// Profile vault overlays the defaults vault field-by-field.
+	base := Profile{Vault: &VaultConfig{Addr: "https://v", Mount: "kv"}}
+	over := Profile{Vault: &VaultConfig{Mount: "secret", TokenCommand: "cmd"}}
+	got := base.Overlay(over)
+	if got.Vault == nil {
+		t.Fatal("vault is nil")
+	}
+	if got.Vault.Addr != "https://v" {
+		t.Errorf("addr should persist from base: %q", got.Vault.Addr)
+	}
+	if got.Vault.Mount != "secret" || got.Vault.TokenCommand != "cmd" {
+		t.Errorf("override not applied: %+v", *got.Vault)
+	}
+
+	// Overlay adds a vault block when the base has none.
+	if g := (Profile{}).Overlay(Profile{Vault: &VaultConfig{Addr: "a"}}); g.Vault == nil || g.Vault.Addr != "a" {
+		t.Error("overlay should add the vault block")
+	}
+	// Overlay without a vault block keeps the base's.
+	if g := (Profile{Vault: &VaultConfig{Addr: "keep"}}).Overlay(Profile{}); g.Vault == nil || g.Vault.Addr != "keep" {
+		t.Error("base vault block should persist")
+	}
+}
+
 func TestEffectiveGlobalDefaults(t *testing.T) {
 	cfg := &Config{
 		Defaults: Profile{API: "https://global-api", URL: "https://global", Expiration: "1d"},

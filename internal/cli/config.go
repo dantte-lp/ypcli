@@ -51,6 +51,7 @@ func (a *app) newConfigDefaultsCmd() *cobra.Command {
 			if v := changedString(cmd, "token-command"); v != "" {
 				d.TokenCommand = v
 			}
+			applyVaultFlags(cmd, &d)
 			cfg.Defaults = d
 			if err := cfg.Save(path); err != nil {
 				return fmt.Errorf("%w: %w", errConfig, err)
@@ -64,6 +65,7 @@ func (a *app) newConfigDefaultsCmd() *cobra.Command {
 	f.String("url", "", "default yopass public URL")
 	f.String("expiration", "", "default expiration (1h, 1d, 1w)")
 	f.String("token-command", "", "default shell command that prints a bearer token")
+	addVaultConfigFlags(cmd)
 	return cmd
 }
 
@@ -90,6 +92,7 @@ func (a *app) newConfigAddCmd() *cobra.Command {
 			if v := changedString(cmd, "token-command"); v != "" {
 				p.TokenCommand = v
 			}
+			applyVaultFlags(cmd, &p)
 			cfg.Profiles[args[0]] = p
 			if cfg.Active == "" {
 				cfg.Active = args[0]
@@ -106,7 +109,46 @@ func (a *app) newConfigAddCmd() *cobra.Command {
 	f.String("url", "", "yopass public URL")
 	f.String("expiration", "", "default expiration (1h, 1d, 1w)")
 	f.String("token-command", "", "shell command that prints a bearer token")
+	addVaultConfigFlags(cmd)
 	return cmd
+}
+
+// addVaultConfigFlags registers the profile-level Vault/OpenBao connection flags
+// shared by `config add` and `config defaults`.
+func addVaultConfigFlags(cmd *cobra.Command) {
+	f := cmd.Flags()
+	f.String("vault-addr", "", "Vault/OpenBao address")
+	f.String("vault-mount", "", "Vault/OpenBao KV v2 mount")
+	f.String("vault-namespace", "", "Vault/OpenBao namespace")
+	f.String("vault-token-command", "", "command that prints a Vault/OpenBao token")
+}
+
+// applyVaultFlags merges any set vault-* flags into the profile's vault block.
+func applyVaultFlags(cmd *cobra.Command, p *config.Profile) {
+	v := config.VaultConfig{}
+	if p.Vault != nil {
+		v = *p.Vault
+	}
+	set := false
+	if x := changedString(cmd, "vault-addr"); x != "" {
+		v.Addr = x
+		set = true
+	}
+	if x := changedString(cmd, "vault-mount"); x != "" {
+		v.Mount = x
+		set = true
+	}
+	if x := changedString(cmd, "vault-namespace"); x != "" {
+		v.Namespace = x
+		set = true
+	}
+	if x := changedString(cmd, "vault-token-command"); x != "" {
+		v.TokenCommand = x
+		set = true
+	}
+	if set || p.Vault != nil {
+		p.Vault = &v
+	}
 }
 
 func (a *app) newConfigListCmd() *cobra.Command {

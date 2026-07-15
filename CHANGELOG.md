@@ -14,6 +14,8 @@ Russian translation: [CHANGELOG.ru.md](CHANGELOG.ru.md).
 - Read the secret payload directly from a HashiCorp Vault or OpenBao KV v2
   engine: `ypcli send --vault-path <path> --vault-field <field>` (with
   `--vault-addr/-token/-mount/-namespace`, honoring `VAULT_*` / `BAO_*` env).
+  Connection settings can also live in a profile's `vault` block (managed with
+  `ypcli config add/defaults --vault-…`); resolution is flag > env > profile.
 - Editor mode: `ypcli send` with no input opens `$EDITOR` (or `--editor`) to
   compose the secret, sending it on save.
 - Global defaults: a top-level `defaults` block in the config file (managed with

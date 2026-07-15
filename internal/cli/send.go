@@ -44,7 +44,7 @@ func (a *app) newSendCmd() *cobra.Command {
 	// Read the secret payload from a Vault / OpenBao KV v2 engine.
 	f.String("vault-path", "", "read the secret from a Vault/OpenBao KV v2 path")
 	f.String("vault-field", "", "field to read from the Vault/OpenBao secret")
-	f.String("vault-mount", "secret", "Vault/OpenBao KV v2 mount")
+	f.String("vault-mount", "", "Vault/OpenBao KV v2 mount (default: secret)")
 	f.String("vault-addr", "", "Vault/OpenBao address (default $VAULT_ADDR/$BAO_ADDR)")
 	f.String("vault-token", "", "Vault/OpenBao token (default $VAULT_TOKEN/$BAO_TOKEN)")
 	f.String("vault-namespace", "", "Vault/OpenBao namespace (default $VAULT_NAMESPACE/$BAO_NAMESPACE)")
@@ -90,7 +90,7 @@ func (a *app) runSend(cmd *cobra.Command, _ []string) error {
 	switch {
 	case vaultPath != "":
 		var secret string
-		secret, err = readFromVault(ctx, cmd, vaultPath)
+		secret, err = readFromVault(ctx, cmd, vaultPath, s.profile)
 		if err == nil {
 			id, err = sendMessage(ctx, client, stringReader(secret), key, exp, oneTime, requireAuth, useArgon2)
 		}
@@ -131,20 +131,34 @@ func sendMessage(ctx context.Context, client *api.Client, r io.Reader, key strin
 }
 
 // readFromVault fetches the secret payload from a Vault/OpenBao KV v2 engine.
-func readFromVault(ctx context.Context, cmd *cobra.Command, path string) (string, error) {
+// Connection settings resolve as flag > env (VAULT_*/BAO_*) > profile `vault`
+// block; the token additionally falls back to the profile's vault token_command.
+func readFromVault(ctx context.Context, cmd *cobra.Command, path string, prof config.Profile) (string, error) {
 	field, _ := cmd.Flags().GetString("vault-field")
 	if field == "" {
 		return "", usage("--vault-field is required with --vault-path")
 	}
-	mount, _ := cmd.Flags().GetString("vault-mount")
-	c := vault.Client{
-		Addr:      coalesce(changedString(cmd, "vault-addr"), os.Getenv("VAULT_ADDR"), os.Getenv("BAO_ADDR")),
-		Token:     coalesce(changedString(cmd, "vault-token"), os.Getenv("VAULT_TOKEN"), os.Getenv("BAO_TOKEN")),
-		Namespace: coalesce(changedString(cmd, "vault-namespace"), os.Getenv("VAULT_NAMESPACE"), os.Getenv("BAO_NAMESPACE")),
+
+	var pv config.VaultConfig
+	if prof.Vault != nil {
+		pv = *prof.Vault
 	}
+
+	addr := coalesce(changedString(cmd, "vault-addr"), os.Getenv("VAULT_ADDR"), os.Getenv("BAO_ADDR"), pv.Addr)
+	namespace := coalesce(changedString(cmd, "vault-namespace"),
+		os.Getenv("VAULT_NAMESPACE"), os.Getenv("BAO_NAMESPACE"), pv.Namespace)
+	mount := coalesce(changedString(cmd, "vault-mount"), pv.Mount, "secret")
+
+	explicitToken := coalesce(changedString(cmd, "vault-token"), os.Getenv("VAULT_TOKEN"), os.Getenv("BAO_TOKEN"))
+	token, err := config.ResolveToken(ctx, explicitToken, pv.TokenCommand)
+	if err != nil {
+		return "", err
+	}
+
+	c := vault.Client{Addr: addr, Token: token, Namespace: namespace}
 	val, err := c.ReadField(ctx, mount, path, field)
 	if errors.Is(err, vault.ErrNotConfigured) {
-		return "", usage("vault: set --vault-addr/--vault-token or VAULT_ADDR/VAULT_TOKEN")
+		return "", usage("vault: set --vault-addr/--vault-token, VAULT_ADDR/VAULT_TOKEN, or a profile vault block")
 	}
 	return val, err
 }

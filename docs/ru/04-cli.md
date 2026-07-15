@@ -75,11 +75,11 @@ ypcli config remove work
 
 | Подкоманда | Флаги |
 |---|---|
-| `add <name>` | `--api`, `--url`, `--expiration`, `--token-command` |
+| `add <name>` | `--api`, `--url`, `--expiration`, `--token-command`, `--vault-addr`, `--vault-mount`, `--vault-namespace`, `--vault-token-command` |
 | `list` | — |
 | `use <name>` | — |
 | `remove <name>` | — |
-| `defaults` | `--api`, `--url`, `--expiration`, `--token-command` (глобальные дефолты) |
+| `defaults` | как у `add`, сохраняется в глобальные дефолты |
 
 ## `ypcli version`
 

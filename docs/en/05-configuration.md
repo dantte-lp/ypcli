@@ -28,6 +28,10 @@ profiles:
   work:
     argon2: true               # inherits api/url/expiration from defaults
     token_command: vault read -field=token secret/yopass
+    vault:                     # Vault/OpenBao source for `send --vault-path`
+      addr: https://vault.corp
+      mount: secret
+      token_command: vault print token
   public:
     api: https://api.yopass.se
     url: https://yopass.se
@@ -73,6 +77,30 @@ file:
 
 An explicit `--token`/`YPCLI_TOKEN` always wins over `token_command`. The token
 is sent as `Authorization: Bearer <token>`.
+
+## Vault / OpenBao source
+
+A profile (or the global `defaults`) may carry a `vault` block with the
+connection settings for reading a secret payload via `send --vault-path`:
+
+| Field | Meaning |
+|---|---|
+| `addr` | Vault/OpenBao address |
+| `mount` | KV v2 mount (default `secret`) |
+| `namespace` | Vault/OpenBao namespace |
+| `token_command` | command that prints a Vault/OpenBao token (never stored) |
+
+Set it with `ypcli config add <name> --vault-addr … --vault-mount … --vault-namespace … --vault-token-command …`
+(or `ypcli config defaults --vault-…`). Then only the per-secret location is
+needed on the command line:
+
+```bash
+ypcli send --profile work --vault-path db --vault-field password
+```
+
+Resolution for each vault setting is flag > env (`VAULT_*` / `BAO_*`) > profile
+`vault` block. The vault token additionally falls back to the block's
+`token_command`. See [Usage](03-usage.md#from-a-secrets-manager-vault--openbao).
 
 ## Argon2id
 

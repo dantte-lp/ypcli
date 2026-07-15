@@ -25,12 +25,40 @@ const (
 
 // Profile describes how to reach one yopass instance.
 type Profile struct {
-	API          string `yaml:"api,omitempty"`
-	URL          string `yaml:"url,omitempty"`
-	Expiration   string `yaml:"expiration,omitempty"`
-	OneTime      *bool  `yaml:"one_time,omitempty"`
-	Argon2       *bool  `yaml:"argon2,omitempty"`
+	API          string       `yaml:"api,omitempty"`
+	URL          string       `yaml:"url,omitempty"`
+	Expiration   string       `yaml:"expiration,omitempty"`
+	OneTime      *bool        `yaml:"one_time,omitempty"`
+	Argon2       *bool        `yaml:"argon2,omitempty"`
+	TokenCommand string       `yaml:"token_command,omitempty"`
+	Vault        *VaultConfig `yaml:"vault,omitempty"`
+}
+
+// VaultConfig holds connection settings for a Vault/OpenBao KV v2 engine used
+// as a secret payload source. The token is never stored: token_command is run
+// to obtain it (like the yopass token_command).
+type VaultConfig struct {
+	Addr         string `yaml:"addr,omitempty"`
+	Mount        string `yaml:"mount,omitempty"`
+	Namespace    string `yaml:"namespace,omitempty"`
 	TokenCommand string `yaml:"token_command,omitempty"`
+}
+
+// Overlay returns a copy of v with every non-empty field of o applied on top.
+func (v VaultConfig) Overlay(o VaultConfig) VaultConfig {
+	if o.Addr != "" {
+		v.Addr = o.Addr
+	}
+	if o.Mount != "" {
+		v.Mount = o.Mount
+	}
+	if o.Namespace != "" {
+		v.Namespace = o.Namespace
+	}
+	if o.TokenCommand != "" {
+		v.TokenCommand = o.TokenCommand
+	}
+	return v
 }
 
 // Config is the root document persisted to disk.
@@ -155,6 +183,14 @@ func (p Profile) Overlay(o Profile) Profile {
 	}
 	if o.TokenCommand != "" {
 		p.TokenCommand = o.TokenCommand
+	}
+	if o.Vault != nil {
+		base := VaultConfig{}
+		if p.Vault != nil {
+			base = *p.Vault
+		}
+		merged := base.Overlay(*o.Vault)
+		p.Vault = &merged
 	}
 	return p
 }

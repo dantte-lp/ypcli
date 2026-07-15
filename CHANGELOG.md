@@ -9,6 +9,8 @@ Russian translation: [CHANGELOG.ru.md](CHANGELOG.ru.md).
 
 ## [Unreleased]
 
+## [0.1.0] - 2026-07-15
+
 ### Added
 
 - **`send` command** — encrypt text (stdin/`--text`) or files (`--file`) with
@@ -37,4 +39,5 @@ Russian translation: [CHANGELOG.ru.md](CHANGELOG.ru.md).
   (openpgp.js v6), proven by a test-only round-trip against upstream yopass that
   never links into the shipped binary.
 
-[Unreleased]: https://github.com/dantte-lp/ypcli/commits/master
+[Unreleased]: https://github.com/dantte-lp/ypcli/compare/v0.1.0...HEAD
+[0.1.0]: https://github.com/dantte-lp/ypcli/releases/tag/v0.1.0

@@ -9,6 +9,8 @@ English version: [CHANGELOG.md](CHANGELOG.md).
 
 ## [Unreleased]
 
+## [0.1.0] - 2026-07-15
+
 ### Добавлено
 
 - **Команда `send`** — шифрует текст (stdin/`--text`) или файлы (`--file`) с
@@ -38,4 +40,5 @@ English version: [CHANGELOG.md](CHANGELOG.md).
   доказанная round-trip тестом только для тестов против вышестоящего yopass,
   который никогда не линкуется в поставляемый бинарник.
 
-[Unreleased]: https://github.com/dantte-lp/ypcli/commits/master
+[Unreleased]: https://github.com/dantte-lp/ypcli/compare/v0.1.0...HEAD
+[0.1.0]: https://github.com/dantte-lp/ypcli/releases/tag/v0.1.0

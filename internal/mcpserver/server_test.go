@@ -2,6 +2,7 @@ package mcpserver
 
 import (
 	"context"
+	"encoding/base64"
 	"encoding/json"
 	"io"
 	"net/http"
@@ -192,6 +193,73 @@ func TestListProfilesAndVersion(t *testing.T) {
 	call(t, cs, "server_version", map[string]any{}, &ver)
 	if ver.Client != "test-1.0" || ver.Server != "fake-13.0" {
 		t.Errorf("version = %+v", ver)
+	}
+}
+
+func callErr(t *testing.T, cs *mcp.ClientSession, name string, args map[string]any) {
+	t.Helper()
+	res, err := cs.CallTool(context.Background(), &mcp.CallToolParams{Name: name, Arguments: args})
+	if err != nil {
+		t.Fatalf("call %s transport error: %v", name, err)
+	}
+	if !res.IsError {
+		t.Fatalf("call %s: expected a tool error, got %+v", name, res.StructuredContent)
+	}
+}
+
+func TestToolErrorPaths(t *testing.T) {
+	srv, _ := fakeServer(t)
+	cfg := writeConfig(t, srv.URL)
+	cs := connect(t, Options{ConfigPath: cfg, Version: "test"})
+
+	callErr(t, cs, "send_secret", map[string]any{"text": "x", "expiration": "2w"}) // bad expiration
+	callErr(t, cs, "send_secret", map[string]any{"text": "x", "profile": "ghost"}) // unknown profile
+	callErr(t, cs, "send_file", map[string]any{"path": "relative/path"})           // not absolute
+	callErr(t, cs, "receive_secret", map[string]any{"id": "abc"})                  // missing key
+	callErr(t, cs, "receive_secret", map[string]any{})                             // no url/id
+}
+
+func TestBinaryReceiveIsBase64(t *testing.T) {
+	srv, _ := fakeServer(t)
+	cfg := writeConfig(t, srv.URL)
+	cs := connect(t, Options{ConfigPath: cfg, Version: "test"})
+
+	bin := []byte{0x00, 0x01, 0xff, 0xfe, 0x80}
+	file := filepath.Join(t.TempDir(), "blob.bin")
+	if err := os.WriteFile(file, bin, 0o600); err != nil {
+		t.Fatal(err)
+	}
+	var sent sendOutput
+	call(t, cs, "send_file", map[string]any{"path": file}, &sent)
+
+	var got receiveOutput
+	call(t, cs, "receive_secret", map[string]any{"url": sent.URL}, &got)
+	if got.Content != "" || got.ContentBase64 == "" {
+		t.Fatalf("binary payload should use content_base64: %+v", got)
+	}
+	decoded, err := base64.StdEncoding.DecodeString(got.ContentBase64)
+	if err != nil || string(decoded) != string(bin) {
+		t.Errorf("base64 round-trip mismatch: %v", err)
+	}
+}
+
+func TestProfileArgumentHonored(t *testing.T) {
+	srvA, _ := fakeServer(t)
+	srvB, _ := fakeServer(t)
+	dir := t.TempDir()
+	cfg := filepath.Join(dir, "config.yaml")
+	body := "active: a\nprofiles:\n" +
+		"  a:\n    api: " + srvA.URL + "\n    url: " + srvA.URL + "\n" +
+		"  b:\n    api: " + srvB.URL + "\n    url: " + srvB.URL + "\n"
+	if err := os.WriteFile(cfg, []byte(body), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	cs := connect(t, Options{ConfigPath: cfg, Version: "test"})
+
+	var sent sendOutput
+	call(t, cs, "send_secret", map[string]any{"text": "hi", "profile": "b"}, &sent)
+	if !strings.HasPrefix(sent.URL, srvB.URL) {
+		t.Errorf("profile b should target %s, got %s", srvB.URL, sent.URL)
 	}
 }
 

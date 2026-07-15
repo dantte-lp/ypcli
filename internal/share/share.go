@@ -5,6 +5,7 @@
 package share
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 	"io"
@@ -79,7 +80,7 @@ func SendFile(ctx context.Context, client *api.Client, publicURL, path string, o
 	if err != nil {
 		return SendResult{}, fmt.Errorf("encrypt file: %w", err)
 	}
-	id, err := client.CreateFile(ctx, strings.NewReader(string(data)), o.Expiration, o.OneTime)
+	id, err := client.CreateFile(ctx, bytes.NewReader(data), o.Expiration, o.OneTime)
 	if err != nil {
 		return SendResult{}, err
 	}

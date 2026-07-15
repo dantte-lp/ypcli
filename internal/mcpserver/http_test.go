@@ -45,9 +45,23 @@ func TestBearerAuth(t *testing.T) {
 }
 
 func TestHandlerNoTokenSkipsAuth(t *testing.T) {
-	// With an empty token the handler is the bare MCP handler (no auth wrapper).
+	// With an empty token the handler is the bare MCP handler (no auth wrapper):
+	// a request must reach it rather than being 401'd by the auth middleware.
 	h := Handler(New(Options{ConfigPath: "/nonexistent"}), "")
-	if h == nil {
-		t.Fatal("Handler returned nil")
+	req := httptest.NewRequest(http.MethodPost, "/", nil)
+	rec := httptest.NewRecorder()
+	h.ServeHTTP(rec, req)
+	if rec.Code == http.StatusUnauthorized {
+		t.Error("no-token handler must not enforce bearer auth")
+	}
+}
+
+func TestHandlerWithTokenEnforcesAuth(t *testing.T) {
+	h := Handler(New(Options{ConfigPath: "/nonexistent"}), "tok")
+	req := httptest.NewRequest(http.MethodPost, "/", nil)
+	rec := httptest.NewRecorder()
+	h.ServeHTTP(rec, req)
+	if rec.Code != http.StatusUnauthorized {
+		t.Errorf("status = %d, want 401 without a bearer token", rec.Code)
 	}
 }

@@ -8,6 +8,9 @@ import (
 	"context"
 	"encoding/base64"
 	"fmt"
+	"os"
+	"path/filepath"
+	"sort"
 	"strings"
 	"unicode/utf8"
 
@@ -35,8 +38,9 @@ func New(o Options) *mcp.Server {
 		Description: "Encrypt and publish a text secret to yopass, returning a one-time share URL.",
 	}, r.sendSecret)
 	mcp.AddTool(s, &mcp.Tool{
-		Name:        "send_file",
-		Description: "Encrypt and publish a file (by path) to yopass, returning a one-time share URL.",
+		Name: "send_file",
+		Description: "Encrypt and publish a file (by absolute path) to yopass, returning a one-time share URL. " +
+			"SECURITY: this reads an arbitrary local file — only share files the user explicitly intended.",
 	}, r.sendFile)
 	if !o.ReadOnly {
 		mcp.AddTool(s, &mcp.Tool{
@@ -143,6 +147,9 @@ func (r *registry) sendSecret(ctx context.Context, _ *mcp.CallToolRequest, in se
 }
 
 func (r *registry) sendFile(ctx context.Context, _ *mcp.CallToolRequest, in sendFileInput) (*mcp.CallToolResult, sendOutput, error) {
+	if !filepath.IsAbs(in.Path) {
+		return nil, sendOutput{}, fmt.Errorf("path must be absolute, got %q", in.Path)
+	}
 	client, publicURL, prof, err := r.clientFor(ctx, in.Profile)
 	if err != nil {
 		return nil, sendOutput{}, err
@@ -187,8 +194,15 @@ func (r *registry) listProfiles(_ context.Context, _ *mcp.CallToolRequest, _ noI
 	if err != nil {
 		return nil, listProfilesOutput{}, err
 	}
+	names := make([]string, 0, len(cfg.Profiles))
+	for name := range cfg.Profiles {
+		names = append(names, name)
+	}
+	sort.Strings(names)
+
 	out := listProfilesOutput{Profiles: []profileInfo{}}
-	for name, p := range cfg.Profiles {
+	for _, name := range names {
+		p := cfg.Profiles[name]
 		out.Profiles = append(out.Profiles, profileInfo{
 			Name:   name,
 			API:    firstNonEmpty(p.API, cfg.Defaults.API),
@@ -224,7 +238,9 @@ func (r *registry) clientFor(ctx context.Context, profileName string) (*api.Clie
 	if err != nil {
 		return nil, "", config.Profile{}, err
 	}
-	token, err := config.ResolveToken(ctx, "", prof.TokenCommand)
+	// Honor $YPCLI_TOKEN for upstream yopass auth, matching the CLI, before
+	// falling back to the profile's token_command.
+	token, err := config.ResolveToken(ctx, os.Getenv("YPCLI_TOKEN"), prof.TokenCommand)
 	if err != nil {
 		return nil, "", prof, err
 	}

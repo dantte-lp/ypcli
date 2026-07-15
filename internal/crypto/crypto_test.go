@@ -45,7 +45,7 @@ func TestEncryptDecryptText(t *testing.T) {
 		t.Fatalf("Encrypt: %v", err)
 	}
 	if !strings.HasPrefix(ct, armorHeader) {
-		t.Errorf("ciphertext is not armored: %q", ct[:min(len(ct), 40)])
+		t.Errorf("ciphertext is not armored")
 	}
 
 	got, filename, err := Decrypt(strings.NewReader(ct), key)
@@ -200,11 +200,4 @@ func TestParseURLInvalid(t *testing.T) {
 			t.Errorf("ParseURL(%q) expected error", s)
 		}
 	}
-}
-
-func min(a, b int) int {
-	if a < b {
-		return a
-	}
-	return b
 }

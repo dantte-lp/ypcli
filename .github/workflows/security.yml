@@ -28,4 +28,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: securego/gosec@master
         with:
-          args: ./...
+          # G304: the CLI intentionally opens user-specified files.
+          # G204: token_command is a user-configured subprocess by design.
+          # Both are inherent to a secret-sharing CLI and reviewed in SECURITY.md.
+          args: -exclude=G204,G304 ./...

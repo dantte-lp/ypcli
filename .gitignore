@@ -1,0 +1,6 @@
+/dist/
+/ypcli
+/ypcli.exe
+*.out
+coverage.*
+.task/

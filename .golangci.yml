@@ -1,0 +1,30 @@
+version: "2"
+
+linters:
+  enable:
+    - bodyclose
+    - contextcheck
+    - copyloopvar
+    - errorlint
+    - gocritic
+    - gosec
+    - misspell
+    - revive
+    - unconvert
+    - unparam
+  settings:
+    revive:
+      rules:
+        - name: exported
+          disabled: false
+  exclusions:
+    rules:
+      - path: _test\.go
+        linters:
+          - gosec
+          - unparam
+
+formatters:
+  enable:
+    - gofmt
+    - goimports

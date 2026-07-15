@@ -1,0 +1,43 @@
+version: "3"
+
+vars:
+  MODULE: github.com/dantte-lp/ypcli
+  LDFLAGS: >-
+    -s -w
+    -X main.version={{.VERSION | default "dev"}}
+    -X main.commit={{.COMMIT | default "none"}}
+    -X main.date={{.DATE | default "unknown"}}
+
+env:
+  CGO_ENABLED: "0"
+
+tasks:
+  build:
+    desc: Build the ypcli binary
+    cmds:
+      - go build -trimpath -ldflags "{{.LDFLAGS}}" -o ypcli ./cmd/ypcli
+
+  test:
+    desc: Run tests with race detector and coverage
+    cmds:
+      - go test -race -cover ./...
+
+  lint:
+    desc: Run golangci-lint
+    cmds:
+      - golangci-lint run
+
+  vuln:
+    desc: Run govulncheck
+    cmds:
+      - go run golang.org/x/vuln/cmd/govulncheck@latest ./...
+
+  tidy:
+    desc: Tidy go.mod
+    cmds:
+      - go mod tidy
+
+  release-snapshot:
+    desc: Build a local snapshot release
+    cmds:
+      - go run github.com/goreleaser/goreleaser/v2@latest release --snapshot --clean

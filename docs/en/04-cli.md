@@ -3,7 +3,7 @@
 ## Global flags
 
 Available on every command. Resolution precedence is
-**flag > env (`YPCLI_*`) > active profile > built-in default**.
+**flag > env (`YPCLI_*`) > active profile > global defaults > built-in default**.
 
 | Flag | Env | Description |
 |---|---|---|

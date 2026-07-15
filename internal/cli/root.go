@@ -30,7 +30,7 @@ type app struct {
 }
 
 // settings are the effective values for one command invocation, resolved with
-// precedence flag > env (YPCLI_*) > active profile > built-in default.
+// precedence flag > env (YPCLI_*) > active profile > global defaults > built-in.
 type settings struct {
 	api      string
 	url      string

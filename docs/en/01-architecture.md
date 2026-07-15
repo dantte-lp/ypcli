@@ -77,9 +77,9 @@ Every setting resolves in this exact order:
 
 ```mermaid
 flowchart LR
-    FLAG["command flag"] --> ENV["env YPCLI_*"] --> PROF["active profile"] --> DEF["built-in default"]
+    FLAG["command flag"] --> ENV["env YPCLI_*"] --> PROF["active profile"] --> GLOB["global defaults"] --> DEF["built-in default"]
 ```
 
-Implemented in `internal/cli/root.go` with a fresh `viper.New()` per command,
-where the active profile forms the default layer beneath flags and environment
-variables.
+Implemented in `internal/cli/root.go` with a fresh `viper.New()` per command;
+`config.Effective` overlays the global `defaults` block with the active profile
+to form the default layer beneath flags and environment variables.

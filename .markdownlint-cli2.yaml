@@ -29,3 +29,4 @@ ignores:
   - build
   - bin
   - coverage.html
+  - "**/.pytest_cache/**"

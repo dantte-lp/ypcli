@@ -77,9 +77,9 @@ flowchart LR
 
 ```mermaid
 flowchart LR
-    FLAG["command flag"] --> ENV["env YPCLI_*"] --> PROF["active profile"] --> DEF["built-in default"]
+    FLAG["command flag"] --> ENV["env YPCLI_*"] --> PROF["active profile"] --> GLOB["global defaults"] --> DEF["built-in default"]
 ```
 
-Реализовано в `internal/cli/root.go` с созданием нового `viper.New()` для каждой команды,
-где активный профиль формирует слой значений по умолчанию под флагами и переменными
-окружения.
+Реализовано в `internal/cli/root.go` с созданием нового `viper.New()` для каждой
+команды; `config.Effective` накладывает активный профиль поверх глобального блока
+`defaults`, формируя слой значений по умолчанию под флагами и переменными окружения.

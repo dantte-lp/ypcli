@@ -170,6 +170,41 @@ func TestSendFileReceiveToDir(t *testing.T) {
 	}
 }
 
+// Regression: receiving a file into a not-yet-existing directory (trailing
+// separator) must create it and write under the embedded filename.
+func TestReceiveFileToNonexistentDir(t *testing.T) {
+	fs := newFakeServer()
+	srv := httptest.NewServer(fs.handler())
+	defer srv.Close()
+
+	dir := t.TempDir()
+	src := filepath.Join(dir, "payload.bin")
+	if err := os.WriteFile(src, []byte("DATA"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	out, _, code := run(t, "send", "--file", src, "--api", srv.URL, "--url", srv.URL, "--json")
+	if code != 0 {
+		t.Fatalf("send exit = %d", code)
+	}
+	var res struct{ URL string }
+	if err := json.Unmarshal([]byte(out), &res); err != nil {
+		t.Fatal(err)
+	}
+
+	target := filepath.Join(t.TempDir(), "new", "sub") + string(os.PathSeparator)
+	_, _, rcode := run(t, "receive", res.URL, "--api", srv.URL, "-o", target)
+	if rcode != 0 {
+		t.Fatalf("receive exit = %d", rcode)
+	}
+	got, err := os.ReadFile(filepath.Join(target, "payload.bin"))
+	if err != nil {
+		t.Fatalf("expected file created in new dir: %v", err)
+	}
+	if string(got) != "DATA" {
+		t.Errorf("content = %q", got)
+	}
+}
+
 func TestReceiveConsumedOneTimeExit6(t *testing.T) {
 	fs := newFakeServer()
 	srv := httptest.NewServer(fs.handler())

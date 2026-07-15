@@ -1,7 +1,12 @@
 package cli
 
 import (
+	"context"
+	"errors"
 	"fmt"
+	"net/http"
+	"os"
+	"time"
 
 	"github.com/dantte-lp/ypcli/internal/mcpserver"
 	"github.com/modelcontextprotocol/go-sdk/mcp"
@@ -38,7 +43,27 @@ func (a *app) runMCP(cmd *cobra.Command, _ []string) error {
 	})
 
 	if addr, _ := cmd.Flags().GetString("http"); addr != "" {
-		return fmt.Errorf("--http mode is not implemented yet")
+		token := coalesce(changedString(cmd, "http-token"), os.Getenv("YPCLI_MCP_TOKEN"))
+		if token == "" {
+			return usage("--http requires a bearer token: set --http-token or $YPCLI_MCP_TOKEN")
+		}
+		return serveHTTP(cmd, addr, mcpserver.Handler(srv, token))
 	}
 	return srv.Run(cmd.Context(), &mcp.StdioTransport{})
+}
+
+// serveHTTP runs the MCP HTTP server until the command context is cancelled.
+func serveHTTP(cmd *cobra.Command, addr string, h http.Handler) error {
+	server := &http.Server{Addr: addr, Handler: h, ReadHeaderTimeout: 10 * time.Second}
+	go func() {
+		<-cmd.Context().Done()
+		shutdownCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+		_ = server.Shutdown(shutdownCtx)
+	}()
+	fmt.Fprintf(cmd.ErrOrStderr(), "ypcli mcp listening on %s\n", addr)
+	if err := server.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
+		return fmt.Errorf("mcp http server: %w", err)
+	}
+	return nil
 }
